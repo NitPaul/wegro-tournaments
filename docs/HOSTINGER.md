@@ -178,7 +178,13 @@ docker compose start app
 ```
 
 If `docker compose cp` is not available on your Docker version, use the volume
-directly:
+directly. Confirm the volume's real name first — Docker prefixes it with the
+directory name, so it is only `wegro-tournaments_wegro-data` if you cloned into
+a folder called `wegro-tournaments`:
+
+```bash
+docker volume ls | grep wegro
+```
 
 ```bash
 docker compose stop app
