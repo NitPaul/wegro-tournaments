@@ -1,0 +1,7 @@
+# The server runs on Linux in a container; keep the repo LF everywhere so a
+# checkout on Windows cannot commit CRLF back and confuse a diff.
+* text=auto eol=lf
+*.png binary
+*.jpg binary
+*.ico binary
+*.webp binary

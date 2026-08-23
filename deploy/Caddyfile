@@ -1,0 +1,29 @@
+# TLS termination and reverse proxy.
+#
+# Caddy gets and renews a Let's Encrypt certificate on its own, which is the
+# entire reason it is here rather than nginx: certificate renewal is the part of
+# self-hosting that quietly breaks six months later, and this removes it.
+#
+# Set DOMAIN in .env, point its DNS A record at this server, open ports 80 and
+# 443, then:  docker compose --profile tls up -d
+
+{$DOMAIN} {
+	encode zstd gzip
+
+	# Server-Sent Events must not be buffered — buffering holds a goal back
+	# until the buffer fills, so the phones on the touchline update a minute
+	# late. `flush_interval -1` streams every write straight through.
+	@sse path /api/stream*
+	reverse_proxy @sse app:3000 {
+		flush_interval -1
+	}
+
+	reverse_proxy app:3000
+
+	log {
+		output file /data/access.log {
+			roll_size 10MiB
+			roll_keep 5
+		}
+	}
+}

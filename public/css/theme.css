@@ -1,0 +1,595 @@
+/* ==========================================================================
+   WeGro Champions League 2026 — design tokens + shared primitives
+   Single source of colour truth. Imported by public.css and admin.css.
+   ========================================================================== */
+
+/* ---- Self-hosted fonts (no CDN: the site must render on bad venue wifi) --- */
+@font-face {
+  font-family: "Inter";
+  font-style: normal;
+  font-weight: 100 900;
+  font-display: swap;
+  src: url("../assets/fonts/inter-latin.woff2") format("woff2");
+  unicode-range: U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA,
+    U+02DC, U+0304, U+0308, U+0329, U+2000-206F, U+20AC, U+2122, U+2191, U+2193,
+    U+2212, U+2215, U+FEFF, U+FFFD;
+}
+@font-face {
+  font-family: "Inter";
+  font-style: normal;
+  font-weight: 100 900;
+  font-display: swap;
+  src: url("../assets/fonts/inter-latin-ext.woff2") format("woff2");
+  unicode-range: U+0100-02BA, U+02BD-02C5, U+02C7-02CC, U+02CE-02D7, U+02DD-02FF,
+    U+0304, U+0308, U+0329, U+1D00-1DBF, U+1E00-1E9F, U+1EF2-1EFF, U+2020,
+    U+20A0-20AB, U+20AD-20C0, U+2113, U+2C60-2C7F, U+A720-A7FF;
+}
+@font-face {
+  font-family: "Manrope";
+  font-style: normal;
+  font-weight: 200 800;
+  font-display: swap;
+  src: url("../assets/fonts/manrope-latin.woff2") format("woff2");
+  unicode-range: U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA,
+    U+02DC, U+0304, U+0308, U+0329, U+2000-206F, U+20AC, U+2122, U+2191, U+2193,
+    U+2212, U+2215, U+FEFF, U+FFFD;
+}
+@font-face {
+  font-family: "Manrope";
+  font-style: normal;
+  font-weight: 200 800;
+  font-display: swap;
+  src: url("../assets/fonts/manrope-latin-ext.woff2") format("woff2");
+  unicode-range: U+0100-02BA, U+02BD-02C5, U+02C7-02CC, U+02CE-02D7, U+02DD-02FF,
+    U+0304, U+0308, U+0329, U+1D00-1DBF, U+1E00-1E9F, U+1EF2-1EFF, U+2020,
+    U+20A0-20AB, U+20AD-20C0, U+2113, U+2C60-2C7F, U+A720-A7FF;
+}
+
+/* ---- Tokens --------------------------------------------------------------
+   Greens/orange sampled from logo.png; surfaces + mint/gold from the deck.   */
+:root {
+  --wg-green: #00a950;
+  --wg-green-dk: #007a3a;
+  --wg-orange: #f5831f;
+
+  --bg: #062e2a;
+  --bg-2: #04211e;
+  --surface: #0b3b36;
+  --surface-2: #0f4a43;
+  --surface-3: #14574f;
+
+  --mint: #3fd9a4;
+  --mint-dim: #2bb287;
+  --gold: #e8c35c;
+  --flame: #f2622a;
+  --danger: #ef5a5a;
+
+  --text: #eaf6f2;
+  --muted: #8fb3ac;
+  --faint: #6d938c;
+
+  --line: rgba(255, 255, 255, 0.09);
+  --line-strong: rgba(255, 255, 255, 0.16);
+
+  --radius: 16px;
+  --radius-sm: 10px;
+  --radius-pill: 999px;
+  --shadow: 0 10px 30px rgba(0, 0, 0, 0.35);
+  --shadow-lg: 0 20px 50px rgba(0, 0, 0, 0.45);
+
+  --gap: 14px;
+  --gap-lg: 22px;
+  --maxw: 1180px;
+
+  --font: "Inter", ui-sans-serif, -apple-system, "Segoe UI", Roboto, Arial,
+    "Noto Sans", sans-serif;
+  --font-display: "Manrope", "Inter", ui-sans-serif, -apple-system, "Segoe UI",
+    Arial, sans-serif;
+  --mono: ui-monospace, "SF Mono", "Cascadia Mono", Consolas, monospace;
+}
+
+/* ---- Reset ---------------------------------------------------------------- */
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+}
+/* Any class here that sets `display` would otherwise beat the UA [hidden] rule
+   and leave "hidden" elements — the login gate, empty states — still on screen. */
+[hidden] {
+  display: none !important;
+}
+html {
+  -webkit-text-size-adjust: 100%;
+}
+body {
+  margin: 0;
+  min-height: 100vh;
+  font-family: var(--font);
+  font-size: 15px;
+  line-height: 1.55;
+  color: var(--text);
+  background:
+    radial-gradient(900px 620px at 8% -8%, rgba(0, 169, 80, 0.16), transparent 65%),
+    radial-gradient(820px 560px at 104% 4%, rgba(63, 217, 164, 0.11), transparent 62%),
+    var(--bg);
+  background-attachment: fixed;
+  -webkit-font-smoothing: antialiased;
+}
+h1,
+h2,
+h3,
+h4 {
+  font-family: var(--font-display);
+  font-weight: 800;
+  letter-spacing: -0.02em;
+  margin: 0;
+  line-height: 1.2;
+}
+img {
+  max-width: 100%;
+  display: block;
+}
+a {
+  color: var(--mint);
+  text-decoration: none;
+}
+a:hover {
+  text-decoration: underline;
+}
+button,
+input,
+select,
+textarea {
+  font: inherit;
+  color: inherit;
+}
+:focus-visible {
+  outline: 2px solid var(--mint);
+  outline-offset: 2px;
+  border-radius: 6px;
+}
+
+/* ---- Layout --------------------------------------------------------------- */
+.wrap {
+  width: 100%;
+  max-width: var(--maxw);
+  margin: 0 auto;
+  padding: 0 16px;
+}
+.stack {
+  display: grid;
+  gap: var(--gap);
+  grid-template-columns: minmax(0, 1fr);
+}
+
+/* A grid item's default `min-width: auto` is its MIN-CONTENT width, so one wide
+   row (a long player name next to a nowrap price) stretches the whole column
+   past the viewport. Every grid below uses minmax(0, 1fr) to opt out of that. */
+.row {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+.spread {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+.grow {
+  flex: 1 1 auto;
+  min-width: 0;
+}
+
+/* ---- Card ----------------------------------------------------------------- */
+.card {
+  background: linear-gradient(180deg, var(--surface), rgba(11, 59, 54, 0.72));
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+  padding: 16px;
+  box-shadow: var(--shadow);
+}
+.card--flat {
+  background: var(--surface);
+  box-shadow: none;
+}
+.card__title {
+  font-family: var(--font-display);
+  font-size: 15px;
+  font-weight: 800;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: var(--mint);
+  margin: 0 0 12px;
+}
+.hr {
+  height: 1px;
+  background: var(--line);
+  border: 0;
+  margin: 12px 0;
+}
+
+/* ---- Label / eyebrow ------------------------------------------------------ */
+.eyebrow {
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--mint);
+  margin: 0 0 4px;
+}
+.muted {
+  color: var(--muted);
+}
+.faint {
+  color: var(--faint);
+  font-size: 13px;
+}
+
+/* ---- Pills / badges ------------------------------------------------------- */
+.pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 4px 11px;
+  border-radius: var(--radius-pill);
+  background: var(--surface-2);
+  border: 1px solid var(--line);
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--text);
+  white-space: nowrap;
+}
+.pill--mint {
+  background: rgba(63, 217, 164, 0.14);
+  border-color: rgba(63, 217, 164, 0.4);
+  color: var(--mint);
+}
+.pill--gold {
+  background: rgba(232, 195, 92, 0.14);
+  border-color: rgba(232, 195, 92, 0.42);
+  color: var(--gold);
+}
+.pill--flame {
+  background: rgba(242, 98, 42, 0.16);
+  border-color: rgba(242, 98, 42, 0.45);
+  color: #ff9166;
+}
+.pill--danger {
+  background: rgba(239, 90, 90, 0.14);
+  border-color: rgba(239, 90, 90, 0.42);
+  color: #ff9d9d;
+}
+/* A squad carrying more players than the standard size. Small, red, inline —
+   it sits inside a sub-line rather than replacing it, so the count still reads
+   cleanly (7/7) while the difference from the standard squad stays visible. */
+.flag-extra {
+  display: inline-block;
+  padding: 1px 7px;
+  border-radius: var(--radius-pill);
+  background: rgba(239, 90, 90, 0.16);
+  border: 1px solid rgba(239, 90, 90, 0.45);
+  color: #ff9d9d;
+  font-size: 11px;
+  font-weight: 700;
+  line-height: 1.5;
+  white-space: nowrap;
+  vertical-align: baseline;
+}
+/* A guest from outside the auction. Same shape as .flag-extra but gold, because
+   it marks a privilege rather than a problem. */
+.flag-special {
+  display: inline-block;
+  padding: 1px 7px;
+  border-radius: var(--radius-pill);
+  background: rgba(232, 195, 92, 0.15);
+  border: 1px solid rgba(232, 195, 92, 0.45);
+  color: var(--gold);
+  font-size: 11px;
+  font-weight: 700;
+  line-height: 1.5;
+  white-space: nowrap;
+  vertical-align: baseline;
+}
+.pill--live {
+  background: rgba(242, 98, 42, 0.18);
+  border-color: rgba(242, 98, 42, 0.55);
+  color: #ff9166;
+}
+.pill--live::before {
+  content: "";
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  background: var(--flame);
+  animation: pulse 1.4s ease-in-out infinite;
+}
+@keyframes pulse {
+  0%,
+  100% {
+    opacity: 1;
+    transform: scale(1);
+  }
+  50% {
+    opacity: 0.35;
+    transform: scale(0.75);
+  }
+}
+
+/* ---- Buttons -------------------------------------------------------------- */
+.btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  padding: 10px 16px;
+  border-radius: var(--radius-sm);
+  border: 1px solid var(--line-strong);
+  background: var(--surface-2);
+  color: var(--text);
+  font-weight: 600;
+  font-size: 14px;
+  cursor: pointer;
+  white-space: nowrap;
+  transition: transform 0.12s ease, background 0.15s ease, opacity 0.15s ease;
+  -webkit-tap-highlight-color: transparent;
+}
+.btn:hover:not(:disabled) {
+  background: var(--surface-3);
+}
+.btn:active:not(:disabled) {
+  transform: translateY(1px);
+}
+.btn:disabled {
+  opacity: 0.42;
+  cursor: not-allowed;
+}
+.btn--primary {
+  background: linear-gradient(135deg, var(--wg-green), var(--mint-dim));
+  border-color: transparent;
+  color: #04231d;
+  font-weight: 700;
+}
+.btn--primary:hover:not(:disabled) {
+  filter: brightness(1.08);
+  background: linear-gradient(135deg, var(--wg-green), var(--mint-dim));
+}
+.btn--orange {
+  background: linear-gradient(135deg, var(--wg-orange), var(--flame));
+  border-color: transparent;
+  color: #2a1102;
+  font-weight: 700;
+}
+.btn--orange:hover:not(:disabled) {
+  filter: brightness(1.08);
+  background: linear-gradient(135deg, var(--wg-orange), var(--flame));
+}
+.btn--ghost {
+  background: transparent;
+}
+.btn--danger {
+  background: rgba(239, 90, 90, 0.14);
+  border-color: rgba(239, 90, 90, 0.45);
+  color: #ffb3b3;
+}
+.btn--danger:hover:not(:disabled) {
+  background: rgba(239, 90, 90, 0.24);
+}
+.btn--sm {
+  padding: 6px 11px;
+  font-size: 13px;
+  border-radius: 8px;
+}
+.btn--block {
+  width: 100%;
+}
+
+/* ---- Form fields ---------------------------------------------------------- */
+.field {
+  display: grid;
+  gap: 5px;
+}
+.field > label {
+  font-size: 12px;
+  font-weight: 600;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+  color: var(--muted);
+}
+.input,
+select.input,
+textarea.input {
+  width: 100%;
+  padding: 10px 12px;
+  border-radius: var(--radius-sm);
+  border: 1px solid var(--line-strong);
+  background: var(--bg-2);
+  color: var(--text);
+  font-size: 15px;
+  transition: border-color 0.15s ease;
+}
+.input:focus {
+  border-color: var(--mint);
+  outline: none;
+}
+.input::placeholder {
+  color: var(--faint);
+}
+select.input {
+  appearance: none;
+  background-image: linear-gradient(45deg, transparent 50%, var(--muted) 50%),
+    linear-gradient(135deg, var(--muted) 50%, transparent 50%);
+  background-position: calc(100% - 17px) 50%, calc(100% - 12px) 50%;
+  background-size: 5px 5px, 5px 5px;
+  background-repeat: no-repeat;
+  padding-right: 32px;
+}
+.input--score {
+  text-align: center;
+  font-family: var(--font-display);
+  font-size: 24px;
+  font-weight: 800;
+  padding: 6px 4px;
+}
+/* strip the number spinners — they make the score boxes tiny to tap */
+.input--score::-webkit-outer-spin-button,
+.input--score::-webkit-inner-spin-button {
+  -webkit-appearance: none;
+  margin: 0;
+}
+.input--score[type="number"] {
+  -moz-appearance: textfield;
+}
+
+/* ---- Tables --------------------------------------------------------------- */
+.table-scroll {
+  overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
+}
+table.tbl {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 14px;
+  white-space: nowrap;
+}
+table.tbl th {
+  text-align: right;
+  padding: 9px 8px;
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--mint);
+  background: rgba(63, 217, 164, 0.07);
+  border-bottom: 1px solid var(--line);
+}
+table.tbl th:first-child,
+table.tbl td:first-child {
+  text-align: left;
+}
+table.tbl th:nth-child(2),
+table.tbl td:nth-child(2) {
+  text-align: left;
+  white-space: normal;
+}
+table.tbl td {
+  text-align: right;
+  padding: 10px 8px;
+  border-bottom: 1px solid var(--line);
+}
+table.tbl tbody tr:last-child td {
+  border-bottom: 0;
+}
+table.tbl tbody tr:hover td {
+  background: rgba(255, 255, 255, 0.03);
+}
+.num {
+  font-variant-numeric: tabular-nums;
+}
+
+/* ---- Tabs ----------------------------------------------------------------- */
+.tabs {
+  display: flex;
+  gap: 6px;
+  overflow-x: auto;
+  scrollbar-width: none;
+  -webkit-overflow-scrolling: touch;
+  padding-bottom: 2px;
+}
+.tabs::-webkit-scrollbar {
+  display: none;
+}
+.tab {
+  flex: 0 0 auto;
+  padding: 9px 15px;
+  border-radius: var(--radius-pill);
+  border: 1px solid var(--line);
+  background: rgba(255, 255, 255, 0.04);
+  color: var(--muted);
+  font-size: 14px;
+  font-weight: 600;
+  cursor: pointer;
+  white-space: nowrap;
+  transition: all 0.15s ease;
+}
+.tab:hover {
+  color: var(--text);
+  background: rgba(255, 255, 255, 0.08);
+}
+.tab[aria-selected="true"] {
+  background: linear-gradient(135deg, var(--wg-green), var(--mint-dim));
+  border-color: transparent;
+  color: #04231d;
+  font-weight: 700;
+}
+.panel[hidden] {
+  display: none;
+}
+
+/* ---- Toast ---------------------------------------------------------------- */
+.toast {
+  position: fixed;
+  left: 50%;
+  bottom: 22px;
+  transform: translate(-50%, 140%);
+  z-index: 90;
+  max-width: min(92vw, 460px);
+  padding: 12px 18px;
+  border-radius: var(--radius-pill);
+  background: #0a2f26;
+  border: 1px solid rgba(63, 217, 164, 0.45);
+  color: var(--mint);
+  font-weight: 600;
+  font-size: 14px;
+  text-align: center;
+  box-shadow: var(--shadow-lg);
+  transition: transform 0.28s cubic-bezier(0.2, 0.9, 0.3, 1.3);
+}
+.toast.show {
+  transform: translate(-50%, 0);
+}
+.toast.err {
+  background: #2e0f12;
+  border-color: rgba(239, 90, 90, 0.5);
+  color: #ffb3b3;
+}
+
+/* ---- Utility -------------------------------------------------------------- */
+.empty {
+  padding: 22px 12px;
+  text-align: center;
+  color: var(--faint);
+  font-size: 14px;
+}
+.sr-only {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  border: 0;
+}
+.jersey-dot {
+  width: 13px;
+  height: 13px;
+  border-radius: 50%;
+  border: 2px solid rgba(255, 255, 255, 0.55);
+  flex: 0 0 auto;
+  display: inline-block;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.001ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.001ms !important;
+  }
+}

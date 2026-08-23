@@ -1,0 +1,22 @@
+{
+  "name": "wegro-tournaments",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Self-hosted tournament platform — multi-tournament football scoring, auction, live match console and hall of fame.",
+  "type": "module",
+  "engines": {
+    "node": ">=24.0.0"
+  },
+  "scripts": {
+    "start": "node server/index.js",
+    "dev": "node --watch server/index.js",
+    "test": "node --test \"test/**/*.test.js\"",
+    "migrate": "node server/db/migrate.js",
+    "backup": "node tools/backup.js",
+    "restore": "node tools/restore.js",
+    "import:firebase": "node server/import/firebase-backup.js"
+  },
+  "dependencies": {
+    "express": "^5.1.0"
+  }
+}

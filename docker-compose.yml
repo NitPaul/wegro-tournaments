@@ -1,0 +1,60 @@
+# WeGro Tournaments
+#
+#   cp .env.example .env      and fill it in
+#   docker compose up -d
+#
+# For HTTPS (which you need in production — session cookies are marked Secure
+# and browsers restrict features outside a secure context):
+#
+#   docker compose --profile tls up -d
+#
+# Caddy then obtains and renews a certificate automatically. Point DNS at the
+# server and set DOMAIN in .env first.
+
+services:
+  app:
+    build: .
+    image: wegro-tournaments
+    restart: unless-stopped
+    env_file: .env
+    environment:
+      NODE_ENV: production
+      DATA_DIR: /data
+      BACKUP_DIR: /backups
+    volumes:
+      # The whole database is one file in here. Backing up is copying it.
+      - wegro-data:/data
+      - wegro-backups:/backups
+    ports:
+      # Bound to localhost when Caddy is in front, so the app is never exposed
+      # directly. Drop the 127.0.0.1 prefix only if you are terminating TLS
+      # somewhere else already.
+      - "127.0.0.1:${PORT:-3000}:3000"
+    healthcheck:
+      test: ["CMD", "wget", "-qO-", "http://127.0.0.1:3000/healthz"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+      start_period: 10s
+
+  caddy:
+    image: caddy:2-alpine
+    profiles: ["tls"]
+    restart: unless-stopped
+    depends_on:
+      - app
+    environment:
+      DOMAIN: ${DOMAIN:-localhost}
+    ports:
+      - "80:80"
+      - "443:443"
+    volumes:
+      - ./deploy/Caddyfile:/etc/caddy/Caddyfile:ro
+      - caddy-data:/data
+      - caddy-config:/config
+
+volumes:
+  wegro-data:
+  wegro-backups:
+  caddy-data:
+  caddy-config:

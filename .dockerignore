@@ -1,0 +1,19 @@
+# Keep the image to source + production deps only.
+node_modules
+npm-debug.log
+data
+backups
+.env
+.env.local
+.git
+.gitignore
+.github
+test
+docs
+*.md
+!README.md
+.vscode
+.idea
+Dockerfile
+docker-compose.yml
+.dockerignore

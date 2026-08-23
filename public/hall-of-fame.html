@@ -1,0 +1,69 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Hall of Fame — WeGro Tournaments</title>
+    <meta name="description" content="Every WeGro tournament, its champions and its medal winners." />
+
+    <link rel="icon" href="assets/favicon.png" />
+    <link rel="stylesheet" href="css/theme.css" />
+    <link rel="stylesheet" href="css/public.css" />
+    <link rel="stylesheet" href="css/app.css" />
+  </head>
+  <body>
+    <header class="site-head">
+      <div class="wrap row spread">
+        <a class="brand" href="/">
+          <img src="assets/wegro-logo.png" alt="WeGro" height="28" />
+          <span class="brand__title">Hall of Fame</span>
+        </a>
+        <a class="btn btn--ghost btn--sm" href="/">Live scoreboard</a>
+      </div>
+    </header>
+
+    <main class="wrap stack">
+      <section class="hero">
+        <h1 class="hero__title">Hall of Fame</h1>
+        <p class="hero__sub">Every tournament we have run, and who won it.</p>
+      </section>
+
+      <div class="empty-state" id="loading"><div class="spinner"></div><p>Loading…</p></div>
+
+      <div class="empty-state" id="empty" hidden>
+        <h2>Nothing here yet</h2>
+        <p class="muted">
+          A tournament appears here once an organiser marks it finished.
+        </p>
+      </div>
+
+      <div id="content" hidden>
+        <div class="stat-tiles" id="tiles"></div>
+
+        <div class="card" id="titlesCard" hidden>
+          <h2 class="card__title">Most titles</h2>
+          <div class="table-scroll" id="titles"></div>
+        </div>
+
+        <section id="leagues"></section>
+        <section id="friendlies"></section>
+      </div>
+    </main>
+
+    <footer class="site-foot">
+      <div class="wrap spread">
+        <span class="faint">WeGro Tournaments</span>
+        <span class="foot-links">
+          <a class="faint" href="/">Live scoreboard</a>
+          <span class="faint">
+            Developed by
+            <a href="https://github.com/NitPaul" target="_blank" rel="noopener noreferrer" class="credit">NitPaul</a>
+          </span>
+          <a class="faint" href="https://www.wegro.global/" target="_blank" rel="noopener">wegro.global ↗</a>
+        </span>
+      </div>
+    </footer>
+
+    <script type="module" src="js/halloffame.js"></script>
+  </body>
+</html>

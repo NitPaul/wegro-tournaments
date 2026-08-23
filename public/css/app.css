@@ -1,0 +1,424 @@
+/* ==========================================================================
+   Additions for this version — the multi-tournament header, the hall of fame,
+   the discipline tables and the role banners.
+
+   Everything else comes from theme.css and public.css, which are carried over
+   unchanged so the site still looks like the one people already know. Every
+   colour below is a token from theme.css; none is a new literal.
+   ========================================================================== */
+
+/* ------------------------------------------------------------ site header */
+
+.brand {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  text-decoration: none;
+  color: var(--text);
+}
+.brand__title {
+  font-family: var(--font-display);
+  font-weight: 700;
+  letter-spacing: -0.01em;
+}
+
+/* ---------------------------------------------------------------- fixture */
+
+.fx {
+  padding: 12px 0;
+  border-bottom: 1px solid var(--line);
+}
+.fx:last-child {
+  border-bottom: 0;
+}
+.fx--plain {
+  padding-top: 0;
+  border-bottom: 0;
+}
+.fx__team {
+  flex: 1 1 0;
+  min-width: 0;
+  font-weight: 600;
+}
+.fx__team:last-of-type {
+  text-align: right;
+}
+.fx__score {
+  font-family: var(--font-display);
+  font-size: 1.15rem;
+  padding: 0 14px;
+  white-space: nowrap;
+}
+.fx__events {
+  margin: 8px 0 0;
+  padding-left: 18px;
+  list-style: none;
+}
+.fx__events li {
+  font-size: 0.9rem;
+  color: var(--muted);
+  padding: 2px 0;
+}
+
+/* ----------------------------------------------------------------- squads */
+
+.squad__list {
+  list-style: none;
+  margin: 0 0 10px;
+  padding: 0;
+}
+.squad__list li {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 5px 0;
+  border-bottom: 1px solid var(--line);
+}
+.squad__list li:last-child {
+  border-bottom: 0;
+}
+.squad__list .pos {
+  font-size: 0.72rem;
+  font-weight: 700;
+  color: var(--mint);
+  min-width: 34px;
+}
+.squad__list .faint {
+  margin-left: auto;
+}
+
+/* ------------------------------------------------------------- stat lists */
+
+.stat-list {
+  margin: 0;
+  padding-left: 20px;
+}
+.stat-list li {
+  display: flex;
+  align-items: baseline;
+  gap: 8px;
+  padding: 5px 0;
+  border-bottom: 1px solid var(--line);
+}
+.stat-list li:last-child {
+  border-bottom: 0;
+}
+.stat-list .num {
+  margin-left: auto;
+  font-variant-numeric: tabular-nums;
+  color: var(--mint);
+}
+
+/* --------------------------------------------------------- hall of fame */
+
+.hof {
+  margin-bottom: var(--gap);
+}
+.hof .card__title a {
+  color: inherit;
+  text-decoration: none;
+}
+.hof .card__title a:hover {
+  color: var(--mint);
+}
+
+.hof__result {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 10px 22px;
+  margin: 14px 0;
+  padding: 14px;
+  border-radius: var(--radius-sm);
+  background: var(--surface-2);
+}
+.hof__champ,
+.hof__runner {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+.hof__champ b {
+  font-family: var(--font-display);
+  font-size: 1.2rem;
+  color: var(--gold);
+}
+.hof__runner b {
+  font-family: var(--font-display);
+}
+
+/* ----------------------------------------------- hall of fame: the tree */
+
+/* Built on <details>, so the open/close behaviour, keyboard support and
+   accessibility come from the browser. The only job here is to draw the spine
+   and the nodes hanging off it. */
+
+.tree {
+  margin-top: 8px;
+}
+
+.tree__year + .tree__year {
+  margin-top: 6px;
+}
+
+.tree__yearhead {
+  display: flex;
+  align-items: baseline;
+  gap: 12px;
+  cursor: pointer;
+  padding: 12px 4px;
+  border-bottom: 1px solid var(--line-strong);
+  list-style: none;
+  user-select: none;
+}
+.tree__yearhead::-webkit-details-marker {
+  display: none;
+}
+.tree__yearname {
+  font-family: var(--font-display);
+  font-size: 1.5rem;
+  font-weight: 800;
+  color: var(--gold);
+}
+/* A rotating caret, drawn rather than imaged so it inherits the text colour. */
+.tree__yearhead::before,
+.tree__head::before {
+  content: "";
+  width: 0;
+  height: 0;
+  border-left: 6px solid currentColor;
+  border-top: 4px solid transparent;
+  border-bottom: 4px solid transparent;
+  opacity: 0.55;
+  transition: transform 0.15s ease;
+  flex: none;
+}
+details[open] > .tree__yearhead::before,
+details[open] > .tree__head::before {
+  transform: rotate(90deg);
+}
+
+/* The spine: one vertical line the year's tournaments hang from. */
+.tree__body {
+  position: relative;
+  margin-left: 10px;
+  padding: 8px 0 8px 22px;
+  border-left: 2px solid var(--line-strong);
+}
+
+.tree__item {
+  position: relative;
+}
+.tree__item + .tree__item {
+  margin-top: 4px;
+}
+
+.tree__head {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex-wrap: wrap;
+  cursor: pointer;
+  padding: 11px 12px;
+  border-radius: var(--radius-sm);
+  list-style: none;
+  user-select: none;
+}
+.tree__head::-webkit-details-marker {
+  display: none;
+}
+.tree__head:hover {
+  background: var(--surface-2);
+}
+details[open] > .tree__head {
+  background: var(--surface-2);
+}
+
+/* The node on the spine, lined up with the row's centre. */
+.tree__dot {
+  position: absolute;
+  left: -27px;
+  top: 18px;
+  width: 9px;
+  height: 9px;
+  border-radius: 50%;
+  background: var(--mint);
+  box-shadow: 0 0 0 3px var(--bg);
+}
+
+.tree__name {
+  font-weight: 700;
+  flex: 1 1 200px;
+  min-width: 0;
+}
+.tree__champ {
+  color: var(--gold);
+  font-weight: 600;
+  white-space: nowrap;
+}
+
+.tree__detail {
+  padding: 4px 12px 18px;
+}
+.tree__detail .awards {
+  margin-top: 12px;
+}
+
+@media (max-width: 620px) {
+  .tree__body {
+    margin-left: 4px;
+    padding-left: 16px;
+  }
+  .tree__dot {
+    left: -21px;
+  }
+  .tree__champ {
+    flex-basis: 100%;
+  }
+}
+
+/* ------------------------------------------------------- standings extras */
+
+tr.is-q td {
+  background: color-mix(in srgb, var(--mint) 8%, transparent);
+}
+
+/* ------------------------------------------------- match-day player picker */
+
+/* A bottom sheet, because it is used one-handed on a phone at the touchline.
+   Names are big targets; nothing here needs precision. */
+
+.picker {
+  position: fixed;
+  inset: 0;
+  z-index: 60;
+  display: flex;
+  align-items: flex-end;
+  justify-content: center;
+  background: rgba(4, 20, 18, 0.72);
+  animation: pickerFade 0.12s ease both;
+}
+@keyframes pickerFade {
+  from {
+    opacity: 0;
+  }
+}
+
+.picker__panel {
+  width: min(560px, 100%);
+  max-height: 82dvh;
+  overflow-y: auto;
+  background: var(--surface);
+  border: 1px solid var(--line-strong);
+  border-radius: var(--radius) var(--radius) 0 0;
+  padding: 18px;
+  box-shadow: var(--shadow-lg);
+  animation: pickerRise 0.16s cubic-bezier(0.22, 0.9, 0.3, 1) both;
+}
+@keyframes pickerRise {
+  from {
+    transform: translateY(14px);
+  }
+}
+
+.picker__title {
+  font-family: var(--font-display);
+  margin: 0 0 12px;
+  font-size: 1.05rem;
+}
+
+.picker__grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
+  gap: 8px;
+}
+
+.picker__name {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 2px;
+  text-align: left;
+  padding: 12px 14px;
+  min-height: 56px; /* a comfortable thumb target */
+}
+.picker__name .faint {
+  font-size: 0.78rem;
+}
+
+.picker__foot {
+  display: flex;
+  gap: 8px;
+  margin-top: 14px;
+  padding-top: 14px;
+  border-top: 1px solid var(--line);
+}
+.picker__foot .btn {
+  flex: 1;
+}
+
+@media (min-width: 640px) {
+  .picker {
+    align-items: center;
+  }
+  .picker__panel {
+    border-radius: var(--radius);
+  }
+}
+
+/* ------------------------------------------------------------ admin bits */
+
+/* A banner rather than a hidden control: someone who cannot do a thing is
+   better served by being told why than by the button quietly not existing. */
+.role-note {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 12px 14px;
+  border-radius: var(--radius-sm);
+  border: 1px solid var(--line-strong);
+  background: var(--surface-2);
+  color: var(--muted);
+  font-size: 0.92rem;
+}
+
+.pending-card {
+  border-left: 3px solid var(--gold);
+}
+
+.staff-row,
+.people-row {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex-wrap: wrap;
+  padding: 10px 0;
+  border-bottom: 1px solid var(--line);
+}
+.staff-row:last-child,
+.people-row:last-child {
+  border-bottom: 0;
+}
+.staff-row .grow,
+.people-row .grow {
+  min-width: 150px;
+}
+
+.card-buttons {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+.card-buttons .btn {
+  flex: 1 1 90px;
+}
+
+@media (max-width: 620px) {
+  .fx__score {
+    padding: 0 8px;
+  }
+  .hof__result {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+}

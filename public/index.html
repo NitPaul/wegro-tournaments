@@ -1,0 +1,133 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>WeGro Tournaments</title>
+    <meta name="description" content="Live scores, standings, squads and stats." />
+
+    <link rel="icon" href="assets/favicon.png" />
+    <link rel="preload" href="assets/fonts/inter-latin.woff2" as="font" type="font/woff2" crossorigin />
+    <link rel="preload" href="assets/fonts/manrope-latin.woff2" as="font" type="font/woff2" crossorigin />
+    <link rel="stylesheet" href="css/theme.css" />
+    <link rel="stylesheet" href="css/public.css" />
+    <link rel="stylesheet" href="css/app.css" />
+  </head>
+  <body>
+    <header class="site-head">
+      <div class="wrap row spread">
+        <a class="brand" href="/">
+          <img src="assets/wegro-logo.png" alt="WeGro" height="28" />
+          <span class="brand__title" id="brandTitle">Tournaments</span>
+        </a>
+        <div class="row" style="gap: 10px">
+          <select class="input" id="pickTournament" aria-label="Choose tournament" hidden></select>
+          <a class="btn btn--ghost btn--sm" href="/hall-of-fame.html">Hall of Fame</a>
+          <a class="btn btn--ghost btn--sm" href="/admin.html">Admin</a>
+        </div>
+      </div>
+    </header>
+
+    <main class="wrap stack" id="page">
+      <div class="empty-state" id="loading"><div class="spinner"></div><p>Loading…</p></div>
+
+      <div class="empty-state" id="offline" hidden>
+        <h2>Cannot reach the scoreboard</h2>
+        <p class="muted" id="offlineWhy">Check your connection and refresh.</p>
+      </div>
+
+      <div class="empty-state" id="noTournaments" hidden>
+        <h2>No tournaments yet</h2>
+        <p class="muted">An organiser needs to create one. <a href="/admin.html">Sign in</a> if that is you.</p>
+      </div>
+
+      <div id="content" hidden>
+        <!-- The crest is the first grid column. .hero is a two-column grid
+             (96px + rest), so the text must live in its own child or the
+             headline gets squeezed into the crest's column. -->
+        <section class="hero">
+          <img class="hero__crest" src="assets/crest.png" alt="" width="639" height="639" />
+          <div class="hero__text">
+            <p class="eyebrow" id="heroEyebrow"></p>
+            <h1 class="hero__title" id="heroTitle"></h1>
+            <p class="hero__sub" id="heroSub"></p>
+            <div class="row" id="heroPills"></div>
+          </div>
+        </section>
+        <div id="banners"></div>
+
+        <div class="tabs" id="tabs" role="tablist" aria-label="Sections">
+          <button class="tab" id="tab-overview" role="tab" aria-controls="panel-overview" aria-selected="true" type="button">Overview</button>
+          <button class="tab" id="tab-fixtures" role="tab" aria-controls="panel-fixtures" aria-selected="false" type="button">Fixtures</button>
+          <button class="tab" id="tab-standings" role="tab" aria-controls="panel-standings" aria-selected="false" type="button">Standings</button>
+          <button class="tab" id="tab-squads" role="tab" aria-controls="panel-squads" aria-selected="false" type="button">Squads</button>
+          <button class="tab" id="tab-stats" role="tab" aria-controls="panel-stats" aria-selected="false" type="button">Stats &amp; Awards</button>
+          <button class="tab" id="tab-discipline" role="tab" aria-controls="panel-discipline" aria-selected="false" type="button">Discipline</button>
+        </div>
+
+        <section class="panel" id="panel-overview" role="tabpanel" aria-labelledby="tab-overview">
+          <div class="cols-2">
+            <div class="card"><h2 class="card__title">Captains</h2><div id="captains"></div></div>
+            <div class="stack">
+              <div class="card"><h2 class="card__title">Next up</h2><div id="nextUp"></div></div>
+              <div class="card"><h2 class="card__title">Leaderboard</h2><div id="miniTable"></div></div>
+            </div>
+          </div>
+          <div class="card" id="venueCard" hidden><h2 class="card__title">Where</h2><dl class="deflist" id="venue"></dl></div>
+        </section>
+
+        <section class="panel" id="panel-fixtures" role="tabpanel" aria-labelledby="tab-fixtures" hidden>
+          <div class="card"><h2 class="card__title">Fixtures &amp; results</h2><div id="fixtures"></div></div>
+        </section>
+
+        <section class="panel" id="panel-standings" role="tabpanel" aria-labelledby="tab-standings" hidden>
+          <div class="card"><h2 class="card__title">Standings</h2><div class="table-scroll" id="table"></div></div>
+        </section>
+
+        <section class="panel" id="panel-squads" role="tabpanel" aria-labelledby="tab-squads" hidden>
+          <div class="card"><h2 class="card__title">Auction</h2><div id="auctionProgress"></div></div>
+          <div id="squads"></div>
+          <div class="card" id="poolCard" hidden><h2 class="card__title">Still unsold</h2><div id="pool"></div></div>
+        </section>
+
+        <section class="panel" id="panel-stats" role="tabpanel" aria-labelledby="tab-stats" hidden>
+          <div class="card"><h2 class="card__title">Awards</h2><div class="awards" id="awards"></div></div>
+          <div class="cols-2">
+            <div class="card"><h2 class="card__title">Top scorers</h2><div id="scorers"></div></div>
+            <div class="card"><h2 class="card__title">Assists</h2><div id="assists"></div></div>
+          </div>
+          <div class="card">
+            <h2 class="card__title">Player points</h2>
+            <p class="faint" id="pointsKey"></p>
+            <div class="table-scroll" id="pointsTable"></div>
+          </div>
+        </section>
+
+        <section class="panel" id="panel-discipline" role="tabpanel" aria-labelledby="tab-discipline" hidden>
+          <div class="card">
+            <h2 class="card__title">Fair play</h2>
+            <p class="faint">Cleanest team first. Fouls, yellow and red cards all cost points.</p>
+            <div class="table-scroll" id="fairPlay"></div>
+          </div>
+          <div class="card"><h2 class="card__title">Cards</h2><div class="table-scroll" id="cards"></div></div>
+        </section>
+      </div>
+    </main>
+
+    <footer class="site-foot">
+      <div class="wrap spread">
+        <span class="faint">Updated <span id="updated">—</span></span>
+        <span class="foot-links">
+          <a class="faint" href="/hall-of-fame.html">Hall of Fame</a>
+          <span class="faint">
+            Developed by
+            <a href="https://github.com/NitPaul" target="_blank" rel="noopener noreferrer" class="credit">NitPaul</a>
+          </span>
+          <a class="faint" href="https://www.wegro.global/" target="_blank" rel="noopener">wegro.global ↗</a>
+        </span>
+      </div>
+    </footer>
+
+    <script type="module" src="js/public.js"></script>
+  </body>
+</html>

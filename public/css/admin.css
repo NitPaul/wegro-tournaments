@@ -1,0 +1,1188 @@
+/* ==========================================================================
+   Admin console — layered on top of theme.css + public.css
+   ========================================================================== */
+
+/* ---- Login ---------------------------------------------------------------- */
+.login-view {
+  min-height: 100vh;
+  display: grid;
+  place-items: center;
+  padding: 24px 16px;
+}
+.login-card {
+  width: 100%;
+  max-width: 380px;
+  display: grid;
+  gap: 13px;
+  text-align: center;
+  padding: 26px 22px;
+}
+.login-crest {
+  width: 86px;
+  height: 86px;
+  object-fit: contain;
+  margin: 0 auto;
+}
+.login-title {
+  font-size: 22px;
+}
+.login-note {
+  margin: -6px 0 4px;
+}
+.login-card .field {
+  text-align: left;
+}
+.login-err {
+  margin: 0;
+  padding: 9px 12px;
+  border-radius: var(--radius-sm);
+  background: rgba(239, 90, 90, 0.13);
+  border: 1px solid rgba(239, 90, 90, 0.42);
+  color: #ffb3b3;
+  font-size: 13px;
+  text-align: left;
+}
+.login-back {
+  font-size: 13px;
+}
+.google-btn {
+  background: #fff;
+  color: #1f1f1f;
+  border-color: #fff;
+  font-weight: 600;
+  gap: 10px;
+}
+.google-btn:hover:not(:disabled) {
+  background: #f1f1f1;
+}
+.deny-mark {
+  font-size: 34px;
+  line-height: 1;
+}
+.or-rule {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  color: var(--faint);
+  font-size: 12px;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+}
+.or-rule::before,
+.or-rule::after {
+  content: "";
+  flex: 1;
+  height: 1px;
+  background: var(--line);
+}
+
+/* ---- First-run UID setup -------------------------------------------------- */
+.setup-card {
+  border-color: rgba(232, 195, 92, 0.42);
+  background: linear-gradient(180deg, rgba(232, 195, 92, 0.08), transparent);
+  margin-bottom: var(--gap);
+}
+.setup-card code {
+  font-family: var(--mono);
+  font-size: 12.5px;
+  background: rgba(0, 0, 0, 0.28);
+  padding: 1px 6px;
+  border-radius: 5px;
+}
+.uid-row {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex-wrap: wrap;
+  margin-top: 10px;
+}
+.uid-row code {
+  flex: 1 1 220px;
+  min-width: 0;
+  overflow-x: auto;
+  padding: 9px 12px;
+  font-size: 13px;
+  white-space: nowrap;
+  border: 1px solid var(--line-strong);
+}
+
+.admin-main {
+  padding-top: 6px;
+}
+.admin-main .tabs--sticky {
+  top: 58px;
+}
+
+/* ---- Sell form ------------------------------------------------------------ */
+.sell-grid {
+  display: grid;
+  gap: 12px;
+  grid-template-columns: minmax(0, 1fr);
+}
+@media (min-width: 720px) {
+  .sell-grid {
+    grid-template-columns: 2fr 1.4fr minmax(0, 1fr);
+  }
+}
+.bid-ladder {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin: 12px 0 6px;
+  align-items: center;
+}
+.bid-ladder .lbl {
+  font-size: 11px;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--faint);
+  font-weight: 700;
+  margin-right: 2px;
+}
+.sell-msg {
+  margin: 8px 0 12px;
+  font-size: 13.5px;
+  min-height: 20px;
+}
+.sell-msg.ok {
+  color: var(--mint);
+}
+.sell-msg.err {
+  color: #ff9d9d;
+}
+
+/* ---- Captain cards -------------------------------------------------------- */
+.captain-grid {
+  display: grid;
+  gap: 12px;
+  grid-template-columns: minmax(0, 1fr);
+}
+@media (min-width: 700px) {
+  .captain-grid {
+    grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+  }
+}
+@media (min-width: 1080px) {
+  .captain-grid {
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+  }
+}
+.cap {
+  border: 1px solid var(--line);
+  border-radius: var(--radius-sm);
+  background: var(--bg-2);
+  padding: 13px;
+}
+.cap.is-full {
+  border-color: rgba(63, 217, 164, 0.4);
+}
+.cap.is-broke {
+  border-color: rgba(242, 98, 42, 0.45);
+}
+.cap__top {
+  display: flex;
+  align-items: center;
+  gap: 9px;
+  margin-bottom: 9px;
+}
+.cap__top img {
+  width: 38px;
+  height: 38px;
+  border-radius: 50%;
+  object-fit: cover;
+  flex: 0 0 auto;
+  border: 1px solid var(--line-strong);
+}
+.cap__name {
+  font-family: var(--font-display);
+  font-weight: 800;
+  font-size: 15px;
+  color: var(--mint);
+  line-height: 1.2;
+}
+.cap__money {
+  display: flex;
+  align-items: baseline;
+  gap: 6px;
+  margin-bottom: 3px;
+}
+.cap__money b {
+  font-family: var(--font-display);
+  font-size: 24px;
+  font-weight: 800;
+  font-variant-numeric: tabular-nums;
+}
+.cap__chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 5px;
+  margin-top: 9px;
+}
+.chip {
+  font-size: 11px;
+  font-weight: 700;
+  padding: 3px 8px;
+  border-radius: var(--radius-pill);
+  background: var(--surface-2);
+  border: 1px solid var(--line);
+  color: var(--muted);
+  white-space: nowrap;
+}
+.chip.done {
+  background: rgba(63, 217, 164, 0.14);
+  border-color: rgba(63, 217, 164, 0.4);
+  color: var(--mint);
+}
+.chip.need {
+  background: rgba(242, 98, 42, 0.16);
+  border-color: rgba(242, 98, 42, 0.45);
+  color: #ff9166;
+}
+
+/* ---- Pool ----------------------------------------------------------------- */
+.pool__row {
+  display: flex;
+  align-items: center;
+  gap: 9px;
+  padding: 7px 9px;
+  border-radius: 8px;
+  background: rgba(255, 255, 255, 0.035);
+  margin-bottom: 5px;
+  font-size: 14px;
+}
+.pool__row.sold {
+  opacity: 0.72;
+}
+.pool__row .who {
+  flex: 1 1 auto;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.pool__row .to {
+  font-size: 12px;
+  color: var(--mint);
+  white-space: nowrap;
+}
+/* On a phone the buyer + Unsell button squeeze the name down to "S…".
+   Let the row wrap so the player's name always gets a readable line. */
+@media (max-width: 620px) {
+  .pool__row {
+    flex-wrap: wrap;
+    row-gap: 4px;
+  }
+  .pool__row .who {
+    min-width: 130px;
+  }
+  .pool__row .to {
+    margin-left: 42px;
+  }
+}
+.scarce-note {
+  margin: 0 0 12px;
+  padding: 10px 12px;
+  border-radius: var(--radius-sm);
+  background: rgba(242, 98, 42, 0.11);
+  border: 1px solid rgba(242, 98, 42, 0.38);
+  font-size: 13px;
+}
+.scarce-note b {
+  color: #ff9166;
+}
+
+/* ---- Special players ------------------------------------------------------ */
+.add-special {
+  padding: 11px;
+  margin-bottom: 12px;
+  border-radius: var(--radius-sm);
+  background: var(--bg-2);
+  border: 1px solid rgba(232, 195, 92, 0.32);
+}
+.add-special__head {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: 4px 8px;
+  margin-bottom: 9px;
+}
+.add-special__row {
+  display: flex;
+  align-items: center;
+  gap: 9px;
+  flex-wrap: wrap;
+}
+.add-special__row .nm {
+  flex: 1 1 150px;
+  min-width: 100px;
+}
+.add-special__row .pos {
+  flex: 0 0 auto;
+  width: 132px;
+}
+.add-special__row .tm {
+  flex: 1 1 150px;
+  min-width: 110px;
+}
+@media (max-width: 620px) {
+  .add-special__row .nm,
+  .add-special__row .pos,
+  .add-special__row .tm,
+  .add-special__row .btn {
+    flex: 1 1 100%;
+    width: auto;
+  }
+}
+
+.special-list {
+  display: grid;
+  gap: 10px;
+  grid-template-columns: minmax(0, 1fr);
+}
+.special-row {
+  display: flex;
+  align-items: center;
+  gap: 9px;
+  padding: 9px;
+  border-radius: var(--radius-sm);
+  background: var(--bg-2);
+  border: 1px dashed rgba(232, 195, 92, 0.38);
+  flex-wrap: wrap;
+}
+.special-row .nm {
+  flex: 1 1 130px;
+  min-width: 90px;
+}
+.special-row .pos {
+  flex: 0 0 auto;
+  width: 132px;
+}
+.special-row .tm {
+  flex: 1 1 140px;
+  min-width: 110px;
+}
+@media (max-width: 620px) {
+  .special-row .nm,
+  .special-row .pos,
+  .special-row .tm {
+    flex: 1 1 100%;
+    width: auto;
+  }
+}
+
+/* ---- Jerseys -------------------------------------------------------------- */
+.jersey-grid {
+  display: grid;
+  gap: 10px;
+  grid-template-columns: minmax(0, 1fr);
+}
+@media (min-width: 780px) {
+  .jersey-grid {
+    grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+  }
+}
+.jersey-row {
+  display: flex;
+  align-items: center;
+  gap: 9px;
+  padding: 9px;
+  border-radius: var(--radius-sm);
+  background: var(--bg-2);
+  border: 1px solid var(--line);
+  flex-wrap: wrap;
+}
+.jersey-row .nm {
+  flex: 1 1 110px;
+  font-weight: 700;
+  font-family: var(--font-display);
+  font-size: 14px;
+}
+.jersey-row input[type="color"] {
+  width: 42px;
+  height: 34px;
+  padding: 2px;
+  border-radius: 8px;
+  border: 1px solid var(--line-strong);
+  background: var(--bg-2);
+  cursor: pointer;
+}
+.jersey-row .input {
+  flex: 1 1 90px;
+  min-width: 70px;
+}
+.jersey-row .cost {
+  width: 78px;
+  flex: 0 0 auto;
+}
+@media (max-width: 620px) {
+  .jersey-row .nm {
+    flex: 1 1 100%;
+  }
+  .jersey-row .input:not(.cost) {
+    flex: 1 1 120px;
+  }
+}
+
+/* ---- Match editor --------------------------------------------------------- */
+.match {
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+  background: linear-gradient(180deg, var(--surface), rgba(11, 59, 54, 0.7));
+  padding: 14px;
+}
+.match.is-final {
+  border-color: rgba(232, 195, 92, 0.42);
+}
+.match.is-live {
+  border-color: rgba(242, 98, 42, 0.5);
+}
+.match__head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  margin-bottom: 12px;
+  flex-wrap: wrap;
+}
+.match__no {
+  font-family: var(--font-display);
+  font-weight: 800;
+  font-size: 15px;
+}
+.match__grid {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 58px auto 58px minmax(0, 1fr);
+  align-items: center;
+  gap: 8px;
+}
+.match__team {
+  font-family: var(--font-display);
+  font-weight: 700;
+  font-size: 14px;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.match__team.away {
+  text-align: right;
+}
+.match__dash {
+  text-align: center;
+  color: var(--faint);
+  font-weight: 700;
+}
+.match__foot {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-top: 12px;
+  flex-wrap: wrap;
+}
+.match__warn {
+  width: 100%;
+  font-size: 12.5px;
+  color: var(--gold);
+}
+@media (max-width: 560px) {
+  .match__grid {
+    grid-template-columns: minmax(0, 1fr) 50px auto 50px minmax(0, 1fr);
+    gap: 5px;
+  }
+  .match__team {
+    font-size: 12.5px;
+  }
+}
+
+/* ==========================================================================
+   MATCH-DAY CONSOLE — everything for one match, on one screen.
+   Controls are deliberately oversized: this is used standing at a touchline.
+   ========================================================================== */
+.console-card {
+  text-align: center;
+  border-color: var(--line-strong);
+}
+.console-card.is-running {
+  border-color: rgba(242, 98, 42, 0.55);
+  box-shadow: 0 0 0 1px rgba(242, 98, 42, 0.2), var(--shadow);
+}
+.console-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  margin-bottom: 14px;
+  flex-wrap: wrap;
+}
+.console-score {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto auto auto minmax(0, 1fr);
+  align-items: center;
+  gap: 6px;
+}
+.cs-team {
+  font-family: var(--font-display);
+  font-weight: 800;
+  font-size: clamp(13px, 3.4vw, 18px);
+  text-align: right;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.cs-team--away {
+  text-align: left;
+}
+.cs-num {
+  font-family: var(--font-display);
+  font-weight: 800;
+  font-size: clamp(34px, 11vw, 62px);
+  line-height: 1;
+  min-width: 1.1em;
+  font-variant-numeric: tabular-nums;
+}
+.cs-dash {
+  color: var(--faint);
+  font-size: clamp(20px, 6vw, 34px);
+  padding: 0 4px;
+}
+
+.clock {
+  margin: 12px 0 6px;
+  font-family: var(--font-display);
+  font-weight: 800;
+  font-size: clamp(30px, 9vw, 46px);
+  line-height: 1;
+  font-variant-numeric: tabular-nums;
+  color: var(--mint);
+}
+.clock-extra {
+  color: var(--gold);
+  font-size: 0.55em;
+  margin-left: 8px;
+}
+.clock-track {
+  height: 5px;
+  border-radius: 3px;
+  background: rgba(255, 255, 255, 0.09);
+  overflow: hidden;
+  margin-bottom: 16px;
+}
+.clock-track > i {
+  display: block;
+  height: 100%;
+  background: linear-gradient(90deg, var(--wg-green), var(--mint));
+  transition: width 0.3s linear;
+}
+
+.console-controls {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  justify-content: center;
+  margin-bottom: 16px;
+}
+
+/* ---- The referee's logging pad --------------------------------------------
+   Two columns, one per team, so a thumb never has to work out which side a
+   button belongs to. Targets are deliberately large: this is used one-handed,
+   outdoors, while watching a match. */
+.act-card {
+  padding: 12px;
+}
+.act-grid {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+  gap: 10px;
+}
+.act-team {
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 7px;
+}
+.act-head {
+  font-family: var(--font-display);
+  font-weight: 800;
+  font-size: 12.5px;
+  letter-spacing: 0.04em;
+  text-align: center;
+  color: var(--mint);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.act-team--away .act-head {
+  color: var(--wg-orange);
+}
+.act {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 1px;
+  padding: 10px 6px;
+  border-radius: var(--radius-sm);
+  border: 1px solid var(--line-strong);
+  background: var(--surface-2);
+  color: var(--text);
+  cursor: pointer;
+  transition: transform 0.12s ease, background 0.15s ease, border-color 0.15s ease;
+  min-width: 0;
+}
+.act:hover:not(:disabled) {
+  background: var(--surface-3);
+}
+.act:active:not(:disabled) {
+  transform: scale(0.96);
+}
+.act:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+}
+.act-ico {
+  font-size: 20px;
+  line-height: 1.1;
+}
+.act-lbl {
+  font-family: var(--font-display);
+  font-weight: 800;
+  font-size: 12px;
+  letter-spacing: 0.05em;
+}
+.act-sub {
+  font-size: 10px;
+  color: var(--muted);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  max-width: 100%;
+}
+.act--goal {
+  min-height: 74px;
+  border-color: rgba(63, 217, 164, 0.4);
+  background: rgba(63, 217, 164, 0.09);
+}
+.act--goal .act-ico {
+  font-size: 26px;
+}
+.act--goal .act-lbl {
+  font-size: 15px;
+}
+/* The four secondary actions, 2×2. Two columns are kept even on the narrowest
+   phone: four stacked buttons would push the away team's goal button off screen,
+   and losing sight of GOAL is the one thing this layout must never do. */
+.act-row {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+  gap: 7px;
+}
+/* Each action keeps one border colour everywhere it appears — the same hue rims
+   the button, its row in the log, and its icon in the tally. */
+.act--save {
+  border-color: rgba(93, 160, 232, 0.4);
+}
+.act--clearance {
+  border-color: rgba(232, 195, 92, 0.38);
+}
+.act--shot {
+  border-color: rgba(242, 98, 42, 0.42);
+}
+.act--chance {
+  border-color: rgba(63, 217, 164, 0.32);
+}
+.act-tally {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 3px 7px;
+  font-size: 11.5px;
+  font-variant-numeric: tabular-nums;
+}
+/* A counter still on zero is dimmed, so what has actually happened this match
+   reads at a glance instead of as five identical numbers. */
+.act-count {
+  opacity: 0.45;
+  white-space: nowrap;
+}
+.act-count.is-on {
+  opacity: 1;
+  color: var(--text);
+}
+@media (max-width: 560px) {
+  .act-lbl {
+    font-size: 11px;
+  }
+  .act-sub {
+    font-size: 9.5px;
+  }
+  /* Five counters across half a 360px screen: the icons carry the meaning, so
+     the digits are what gets tightened rather than dropping a counter. */
+  .act-tally {
+    font-size: 10.5px;
+    gap: 2px 5px;
+  }
+}
+.console-hint {
+  margin: 10px 0 0;
+  font-size: 12.5px;
+  line-height: 1.55;
+}
+
+/* ---- The referee's crib sheet ---------------------------------------------
+   Collapsed by default so it never sits between the referee and the buttons,
+   but present on the same screen so there is no separate sheet to lose. */
+.ref-guide {
+  border-color: rgba(232, 195, 92, 0.34);
+}
+.ref-guide > summary {
+  cursor: pointer;
+  list-style: none;
+  font-size: 14px;
+}
+.ref-guide > summary::-webkit-details-marker {
+  display: none;
+}
+.ref-guide > summary::after {
+  content: " ▾";
+  color: var(--muted);
+}
+.ref-guide[open] > summary::after {
+  content: " ▴";
+}
+.ref-steps {
+  margin: 12px 0 0;
+  padding-left: 20px;
+  display: grid;
+  gap: 9px;
+  font-size: 13.5px;
+  line-height: 1.6;
+}
+.ref-steps b {
+  color: var(--text);
+}
+.ref-points {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(190px, 1fr));
+  gap: 5px 14px;
+  margin-top: 9px;
+}
+.ref-pt {
+  display: flex;
+  justify-content: space-between;
+  gap: 10px;
+  padding: 4px 0;
+  border-bottom: 1px dotted var(--line);
+  font-size: 13px;
+}
+.ref-pt b {
+  font-family: var(--font-display);
+  color: var(--mint);
+  font-variant-numeric: tabular-nums;
+}
+.ref-pt b.is-neg {
+  color: #ff9d9d;
+}
+
+/* ---- Goal zone picker -----------------------------------------------------
+   A pitch seen from behind the scorer: the goal is at the top, the box is the
+   row under it, and long range is the row below that. */
+.zone-pick {
+  display: grid;
+  gap: 8px;
+}
+.zone-goal {
+  text-align: center;
+  font-family: var(--font-display);
+  font-weight: 800;
+  font-size: 11px;
+  letter-spacing: 0.18em;
+  color: var(--mint);
+  padding: 5px;
+  border-radius: 8px 8px 0 0;
+  background: linear-gradient(180deg, rgba(63, 217, 164, 0.22), transparent);
+  border-top: 3px solid var(--mint);
+}
+.zone-grid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 6px;
+}
+.zone-cell {
+  padding: 16px 6px;
+  border-radius: 8px;
+  border: 1px dashed var(--line-strong);
+  background: rgba(255, 255, 255, 0.03);
+  color: var(--text);
+  font-size: 12px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: transform 0.12s ease, background 0.15s ease, border-color 0.15s ease;
+  min-height: 58px;
+}
+.zone-cell:hover {
+  background: rgba(63, 217, 164, 0.12);
+  border-color: var(--mint);
+}
+.zone-cell:active {
+  transform: scale(0.96);
+}
+.zone-extra {
+  display: flex;
+  gap: 8px;
+  align-items: stretch;
+}
+.zone-cell--pk {
+  flex: 1 1 auto;
+  border-style: solid;
+  border-color: rgba(232, 195, 92, 0.45);
+  min-height: 44px;
+}
+.zone-cell--pk span {
+  display: block;
+  font-size: 10px;
+  color: var(--muted);
+  font-weight: 500;
+}
+.zone-extra .btn {
+  flex: 0 0 auto;
+}
+
+/* ---- Critical goal switch -------------------------------------------------
+   Sits above the pitch picker, full width, and states its own price so the
+   referee never has to remember what the mark is worth. Deliberately looks like
+   a switch rather than a step, because tapping it does not move the flow on. */
+.crit-toggle {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  width: 100%;
+  text-align: left;
+  padding: 10px 12px;
+  margin-bottom: 10px;
+  border-radius: var(--radius-sm);
+  border: 1px dashed rgba(232, 195, 92, 0.5);
+  background: rgba(232, 195, 92, 0.06);
+  color: var(--text);
+  cursor: pointer;
+  transition: background 0.15s ease, border-color 0.15s ease;
+}
+.crit-toggle:hover {
+  background: rgba(232, 195, 92, 0.12);
+}
+.crit-toggle.is-on {
+  border-style: solid;
+  border-color: var(--gold);
+  background: rgba(232, 195, 92, 0.16);
+}
+.crit-star {
+  font-size: 20px;
+  line-height: 1;
+}
+.crit-toggle b {
+  display: block;
+  font-size: 14px;
+}
+.crit-why {
+  display: block;
+  font-size: 11px;
+  color: var(--muted);
+}
+.crit-state {
+  flex: 0 0 auto;
+  font-family: var(--font-display);
+  font-weight: 800;
+  font-size: 11px;
+  letter-spacing: 0.1em;
+  padding: 4px 8px;
+  border-radius: 999px;
+  border: 1px solid var(--line-strong);
+  color: var(--muted);
+}
+.crit-toggle.is-on .crit-state {
+  border-color: transparent;
+  background: var(--gold);
+  color: #2c1f00;
+}
+.btn--crit.is-on {
+  border-color: var(--gold);
+  color: var(--gold);
+}
+
+/* ---- Scorer picker -------------------------------------------------------- */
+.picker {
+  margin-top: var(--gap);
+  padding: 14px;
+  border-radius: var(--radius);
+  border: 1px solid rgba(63, 217, 164, 0.45);
+  background: linear-gradient(180deg, rgba(63, 217, 164, 0.08), var(--surface));
+  animation: riseIn 0.22s ease both;
+}
+.picker-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  margin-bottom: 12px;
+}
+.picker-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(120px, 1fr));
+  gap: 8px;
+}
+.picker-btn {
+  display: flex;
+  flex-direction: column;
+  gap: 1px;
+  padding: 11px 10px;
+  border-radius: var(--radius-sm);
+  border: 1px solid var(--line-strong);
+  background: var(--bg-2);
+  color: var(--text);
+  font-size: 14px;
+  font-weight: 600;
+  text-align: left;
+  cursor: pointer;
+  min-height: 52px;
+  transition: transform 0.12s ease, background 0.15s ease;
+}
+.picker-btn:hover {
+  background: var(--surface-2);
+}
+.picker-btn:active {
+  transform: scale(0.97);
+}
+.picker-btn span {
+  font-size: 10.5px;
+  font-weight: 600;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--faint);
+}
+.picker-btn.is-cap {
+  border-color: rgba(232, 195, 92, 0.45);
+}
+.picker-btn.is-cap span {
+  color: var(--gold);
+}
+.picker-btn.is-alt {
+  background: transparent;
+  color: var(--muted);
+}
+
+/* ---- Events --------------------------------------------------------------- */
+.event-grid {
+  display: grid;
+  gap: 12px;
+  grid-template-columns: minmax(0, 1fr);
+}
+@media (min-width: 720px) {
+  .event-grid {
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+  }
+}
+.ev-row {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 9px 0;
+  border-bottom: 1px solid var(--line);
+}
+.ev-row:last-child {
+  border-bottom: 0;
+}
+.ev-row .grow b {
+  font-weight: 600;
+}
+/* The log mixes goals with saves and clearances, so each row is colour-keyed
+   to its action — a referee scanning for a mistake looks for the icon first. */
+.ev-ico {
+  flex: 0 0 auto;
+  width: 26px;
+  text-align: center;
+  font-size: 15px;
+}
+.ev-row--save {
+  border-left: 3px solid rgba(93, 160, 232, 0.55);
+  padding-left: 7px;
+}
+.ev-row--clearance {
+  border-left: 3px solid rgba(232, 195, 92, 0.5);
+  padding-left: 7px;
+}
+.ev-row--goal {
+  border-left: 3px solid rgba(63, 217, 164, 0.6);
+  padding-left: 7px;
+}
+.ev-row--shot {
+  border-left: 3px solid rgba(242, 98, 42, 0.55);
+  padding-left: 7px;
+}
+.ev-row--chance {
+  border-left: 3px solid rgba(63, 217, 164, 0.35);
+  padding-left: 7px;
+}
+/* A critical goal keeps its action colour on the left and gains a gold wash, so
+   it reads as "a goal, and also special" rather than as a different kind of row. */
+.ev-row.is-critical {
+  background: linear-gradient(90deg, rgba(232, 195, 92, 0.12), transparent 70%);
+}
+.flag-crit {
+  display: inline-block;
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  padding: 1px 6px;
+  border-radius: 999px;
+  background: rgba(232, 195, 92, 0.18);
+  border: 1px solid rgba(232, 195, 92, 0.45);
+  color: var(--gold);
+  vertical-align: 1px;
+}
+.picker-btn.is-hint {
+  border-color: rgba(232, 195, 92, 0.45);
+}
+
+/* ---- Settings ------------------------------------------------------------- */
+.settings-grid {
+  display: grid;
+  gap: 12px;
+  grid-template-columns: minmax(0, 1fr);
+}
+@media (min-width: 640px) {
+  .settings-grid {
+    grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+  }
+}
+@media (min-width: 980px) {
+  .settings-grid {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+}
+.team-edit-row {
+  display: grid;
+  gap: 10px;
+  padding: 12px;
+  border-radius: var(--radius-sm);
+  background: var(--bg-2);
+  border: 1px solid var(--line);
+}
+@media (min-width: 720px) {
+  .team-edit-row {
+    grid-template-columns: 60px minmax(0, 1fr) minmax(0, 1fr) 104px auto;
+    align-items: end;
+  }
+}
+/* Squad size — a 1-2 digit box, so it never needs a full column of its own. */
+.field--narrow .input {
+  text-align: center;
+}
+.team-edit-row img {
+  width: 46px;
+  height: 46px;
+  border-radius: 50%;
+  object-fit: cover;
+  border: 1px solid var(--line-strong);
+}
+
+/* ---- SOLD! celebration ---------------------------------------------------- */
+.sold-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 99;
+  display: grid;
+  place-items: center;
+  padding: 20px;
+  background: rgba(4, 33, 30, 0.72);
+  backdrop-filter: blur(5px);
+  -webkit-backdrop-filter: blur(5px);
+  animation: soldFade 0.22s ease both;
+  pointer-events: none;
+}
+.sold-card {
+  text-align: center;
+  padding: 26px 34px;
+  border-radius: 22px;
+  background: linear-gradient(150deg, var(--surface-2), var(--bg-2));
+  border: 1px solid rgba(63, 217, 164, 0.45);
+  box-shadow: var(--shadow-lg);
+  animation: soldPop 0.45s cubic-bezier(0.2, 0.9, 0.3, 1.5) both;
+  max-width: min(92vw, 460px);
+}
+.sold-card .stamp {
+  font-family: var(--font-display);
+  font-size: clamp(30px, 9vw, 52px);
+  font-weight: 800;
+  letter-spacing: 0.06em;
+  line-height: 1;
+  background: linear-gradient(100deg, var(--wg-orange), var(--flame));
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+}
+.sold-card .who {
+  font-family: var(--font-display);
+  font-size: clamp(19px, 5.4vw, 28px);
+  font-weight: 800;
+  margin: 10px 0 2px;
+}
+.sold-card .to {
+  font-size: 15px;
+  color: var(--mint);
+  font-weight: 600;
+}
+.sold-card .price {
+  margin-top: 12px;
+  display: inline-block;
+  padding: 5px 16px;
+  border-radius: var(--radius-pill);
+  background: rgba(232, 195, 92, 0.15);
+  border: 1px solid rgba(232, 195, 92, 0.45);
+  color: var(--gold);
+  font-family: var(--font-display);
+  font-weight: 800;
+  font-size: 19px;
+}
+@keyframes soldFade {
+  from {
+    opacity: 0;
+  }
+}
+@keyframes soldPop {
+  from {
+    opacity: 0;
+    transform: scale(0.82) translateY(10px);
+  }
+}
+.sold-overlay.is-out {
+  animation: soldFade 0.28s ease reverse both;
+}
+
+/* A captain card flashes when its budget changes. */
+.cap.just-bought {
+  animation: capFlash 0.9s ease both;
+}
+@keyframes capFlash {
+  0%,
+  100% {
+    border-color: var(--line);
+  }
+  25% {
+    border-color: rgba(63, 217, 164, 0.85);
+    background: rgba(63, 217, 164, 0.08);
+  }
+}
+
+/* ---- Danger --------------------------------------------------------------- */
+.danger-card {
+  border-color: rgba(239, 90, 90, 0.35);
+  background: linear-gradient(180deg, rgba(239, 90, 90, 0.07), transparent);
+}
+.danger-row {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 12px 0;
+  border-bottom: 1px solid var(--line);
+  flex-wrap: wrap;
+}
+.danger-row:last-child {
+  border-bottom: 0;
+}
