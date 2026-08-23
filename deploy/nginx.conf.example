@@ -1,0 +1,53 @@
+# Reverse proxy for a host that already runs nginx instead of the bundled
+# Caddy (`docker compose --profile tls`). Use this file instead of that
+# profile — don't run both, they'll fight over ports 80/443.
+#
+# Get a certificate first (e.g. `certbot --nginx -d tournament.wegro.global`,
+# which will also rewrite the TLS block below for you), point the domain's DNS
+# A record at this server, then reload nginx.
+#
+# The app itself is NOT exposed to the internet — docker-compose.yml binds it
+# to 127.0.0.1 only, on the port set by PORT in .env (9009 here). nginx is the
+# only thing the internet talks to.
+
+server {
+    listen 80;
+    listen [::]:80;
+    server_name tournament.wegro.global;
+
+    # certbot uses this for the HTTP-01 challenge; everything else redirects.
+    location /.well-known/acme-challenge/ { root /var/www/certbot; }
+    location / { return 301 https://$host$request_uri; }
+}
+
+server {
+    listen 443 ssl;
+    listen [::]:443 ssl;
+    http2 on;
+    server_name tournament.wegro.global;
+
+    ssl_certificate     /etc/letsencrypt/live/tournament.wegro.global/fullchain.pem;
+    ssl_certificate_key /etc/letsencrypt/live/tournament.wegro.global/privkey.pem;
+
+    # Server-Sent Events must not be buffered, or live scores arrive up to a
+    # minute late — nginx would otherwise hold the stream until its buffer
+    # fills. This is the one failure mode that won't show up in testing and
+    # will show up during a match.
+    location /api/stream {
+        proxy_pass http://127.0.0.1:9009;
+        proxy_buffering off;
+        proxy_read_timeout 24h;
+        proxy_set_header Connection '';
+        proxy_http_version 1.1;
+    }
+
+    location / {
+        proxy_pass http://127.0.0.1:9009;
+        proxy_set_header Host $host;
+        proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+        # REQUIRED: without this the app can't tell the request arrived over
+        # TLS, won't mark session cookies Secure, and sign-in fails in a way
+        # that looks like a wrong password.
+        proxy_set_header X-Forwarded-Proto $scheme;
+    }
+}

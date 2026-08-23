@@ -43,7 +43,7 @@ EXPOSE 3000
 # Hits the dependency-free health route, so an unhappy database shows up as an
 # unhealthy container rather than a silently broken site.
 HEALTHCHECK --interval=30s --timeout=5s --start-period=10s --retries=3 \
-  CMD wget -qO- http://127.0.0.1:3000/healthz > /dev/null || exit 1
+  CMD wget -qO- http://127.0.0.1:${PORT}/healthz > /dev/null || exit 1
 
 ENTRYPOINT ["/sbin/tini", "--"]
 CMD ["node", "server/index.js"]

@@ -14,11 +14,11 @@
 	# until the buffer fills, so the phones on the touchline update a minute
 	# late. `flush_interval -1` streams every write straight through.
 	@sse path /api/stream*
-	reverse_proxy @sse app:3000 {
+	reverse_proxy @sse app:{$PORT:3000} {
 		flush_interval -1
 	}
 
-	reverse_proxy app:3000
+	reverse_proxy app:{$PORT:3000}
 
 	log {
 		output file /data/access.log {

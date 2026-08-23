@@ -29,9 +29,13 @@ services:
       # Bound to localhost when Caddy is in front, so the app is never exposed
       # directly. Drop the 127.0.0.1 prefix only if you are terminating TLS
       # somewhere else already.
-      - "127.0.0.1:${PORT:-3000}:3000"
+      #
+      # Both sides use PORT: it's also what the app inside the container binds
+      # to (via env_file), so the published port and the app's actual listening
+      # port always agree.
+      - "127.0.0.1:${PORT:-3000}:${PORT:-3000}"
     healthcheck:
-      test: ["CMD", "wget", "-qO-", "http://127.0.0.1:3000/healthz"]
+      test: ["CMD", "wget", "-qO-", "http://127.0.0.1:${PORT:-3000}/healthz"]
       interval: 30s
       timeout: 5s
       retries: 3
@@ -45,6 +49,7 @@ services:
       - app
     environment:
       DOMAIN: ${DOMAIN:-localhost}
+      PORT: ${PORT:-3000}
     ports:
       - "80:80"
       - "443:443"
