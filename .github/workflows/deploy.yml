@@ -1,0 +1,70 @@
+name: CI/CD to Hostinger
+
+on:
+  push:
+    branches: [ main ]
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v3
+
+      - name: Install sshpass
+        run: sudo apt-get update && sudo apt-get install -y sshpass
+
+      - name: Deploy using Password SSH
+        env:
+          SERVER_IP: ${{ secrets.SERVER_IP }}
+          USERNAME: ${{ secrets.USERNAME }}
+          PASSWORD: ${{ secrets.PASSWORD }}
+          DIRECTORY: ${{ secrets.DIRECTORY }}
+        run: |
+          sshpass -p "$PASSWORD" ssh -o StrictHostKeyChecking=no $USERNAME@$SERVER_IP << EOF
+            set -e
+
+            cd "$DIRECTORY"
+
+            echo "📦 Pulling latest code..."
+            git pull origin main
+
+            # docker compose, not \`docker build\` + \`docker run\`: the database
+            # lives in the wegro-data named volume declared in
+            # docker-compose.yml, not in the image or a container. \`up -d
+            # --build\` rebuilds the image and recreates the container in
+            # place — the volume is untouched, so this never loses data the
+            # way a manual \`docker rm\` + fresh \`docker run\` (with no -v)
+            # would for a stateful app.
+            #
+            # No --profile tls here: this server fronts the app with its own
+            # nginx (see docs/DEPLOYMENT.md and deploy/nginx.conf.example),
+            # so the bundled Caddy service is never started.
+            echo "🔨 Building and starting..."
+            docker compose up -d --build
+
+            # Drop now-unused images from previous deploys. Safe: this only
+            # touches images, never volumes, so wegro-data/wegro-backups are
+            # never at risk here.
+            echo "🧹 Pruning old images..."
+            docker image prune -f
+
+            # PORT lives in .env on the server (gitignored, not this repo),
+            # so read it back rather than hardcoding it here. Backslashes
+            # below keep these expansions on the remote shell, not the runner.
+            PORT=\$(grep -E '^PORT=' .env | cut -d= -f2)
+            PORT=\${PORT:-3000}
+
+            echo "🩺 Waiting for health check on port \$PORT..."
+            for i in \$(seq 1 10); do
+              if curl -sf "http://127.0.0.1:\$PORT/healthz" > /dev/null; then
+                echo "✅ Healthy"
+                exit 0
+              fi
+              sleep 3
+            done
+
+            echo "❌ App did not become healthy — check: docker compose logs app"
+            exit 1
+          EOF
