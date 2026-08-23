@@ -41,7 +41,7 @@ All three are fixed here, and the first two could not have been fixed in place.
 | **Fouls and cards** | Fouls, yellows and reds. They never move the scoreline. Second-yellow warning, red-card suspensions, a fair-play table. |
 | **Hall of Fame** | Every finished tournament: date, champion, runners-up, final score and all five medals. |
 | **Captains fixed** | Captains are players. Their goals, assists, cards and clean sheets count everywhere. |
-| **Tests** | 134 of them. The old project had none. |
+| **Tests** | 141 of them. The old project had none. |
 | **Docker** | One container, one SQLite file, one command. |
 
 ---
@@ -51,6 +51,8 @@ All three are fixed here, and the first two could not have been fixed in place.
 ### Locally
 
 ```bash
+git clone https://github.com/NitPaul/wegro-tournaments.git
+cd wegro-tournaments
 npm install          # one dependency: express
 cp .env.example .env # fill in SESSION_SECRET and the SUPER_ADMIN_* lines
 npm start            # http://localhost:3000
@@ -84,6 +86,24 @@ Set `SUPER_ADMIN_EMAIL` and `SUPER_ADMIN_PASSWORD` in `.env`. The first boot
 creates that account, and the path closes afterwards. Remove the password from
 the file once you have signed in. If that address has already registered
 itself, it is promoted rather than failing.
+
+### On a real server
+
+**[`docs/HOSTINGER.md`](docs/HOSTINGER.md)** is the step-by-step guide for a
+Hostinger VPS, which is where this is being hosted — DNS, Docker, TLS, loading
+the 2026 data, backups, and what each failure looks like.
+[`docs/DEPLOYMENT.md`](docs/DEPLOYMENT.md) covers any other host, including
+running behind an nginx you already have.
+
+Note that Hostinger's **shared and cloud hosting plans cannot run this** — they
+serve PHP from a directory, and this is a long-running Node process that holds
+an open connection per viewer. It needs a VPS.
+
+### This repository contains no secrets
+
+`.env` and the database are gitignored and have never been committed. Every
+deployment generates its own `SESSION_SECRET`; nothing here is shared between
+environments, so a fork of this repo gets you the code and nothing else.
 
 ---
 
@@ -169,7 +189,8 @@ Take one after the auction and again before kick-off.
 | Read this | If you are |
 |---|---|
 | This file | Anyone — what it is, how to run it, how to import the old data |
-| `docs/DEPLOYMENT.md` | Hosting it on a server |
+| `docs/HOSTINGER.md` | **Hosting it on a Hostinger VPS — start to finish** |
+| `docs/DEPLOYMENT.md` | Hosting it on any other server, or behind your own nginx |
 | `docs/UPDATING.md` | Changing the code and getting it live |
 | `docs/ARCHITECTURE.md` | Taking the codebase over |
 
@@ -216,7 +237,7 @@ plain values out.
 npm test
 ```
 
-134 tests covering standings and every tiebreak, the points engine, medals,
+141 tests covering standings and every tiebreak, the points engine, medals,
 auction rules including the stranding guard, the clock, cards and suspensions,
 and the Firebase import.
 
