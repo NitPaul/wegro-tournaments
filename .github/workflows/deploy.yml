@@ -22,7 +22,11 @@ jobs:
           PASSWORD: ${{ secrets.PASSWORD }}
           DIRECTORY: ${{ secrets.DIRECTORY }}
         run: |
-          sshpass -p "$PASSWORD" ssh -o StrictHostKeyChecking=no $USERNAME@$SERVER_IP << EOF
+          # 'bash -s' as an explicit remote command, rather than a bare `ssh
+          # host << EOF`, so this always runs as a plain non-interactive,
+          # non-login bash reading the script from stdin — not whatever the
+          # account's default login shell happens to be configured to do.
+          sshpass -p "$PASSWORD" ssh -o StrictHostKeyChecking=no $USERNAME@$SERVER_IP 'bash -s' << EOF
             set -e
 
             cd "$DIRECTORY"
@@ -57,14 +61,20 @@ jobs:
             PORT=\${PORT:-3000}
 
             echo "🩺 Waiting for health check on port \$PORT..."
+            healthy=""
             for i in \$(seq 1 10); do
               if curl -sf "http://127.0.0.1:\$PORT/healthz" > /dev/null; then
-                echo "✅ Healthy"
-                exit 0
+                healthy=1
+                break
               fi
               sleep 3
             done
 
-            echo "❌ App did not become healthy — check: docker compose logs app"
-            exit 1
+            if [ -n "\$healthy" ]; then
+              echo "✅ Healthy"
+            else
+              echo "❌ App did not become healthy — recent logs:"
+              docker compose logs app --tail 50
+              exit 1
+            fi
           EOF
