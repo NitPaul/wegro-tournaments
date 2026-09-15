@@ -101,7 +101,8 @@ with the reason. Write them so they can only run once.
 | A tournament's scoreboard (`/t/<slug>`) | `public/tournament.html`, `public/js/tournament.js` |
 | The player list and profiles | `public/players.html`, `public/js/players.js`, `public/js/player-card.js`, `public/css/players.css` |
 | Which address serves which page | `server/pages.js` |
-| The admin console | `public/js/admin.js`, `public/admin.html`, and `public/js/admin/` for Tournaments, Accounts and Players |
+| The admin console | `public/js/admin.js`, `public/admin.html`, and `public/js/admin/` for Tournaments, Accounts, Players, the auction desk and the roster picker |
+| The auction projector screen (`/auction/<slug>`) | `public/auction.html`, `public/js/auction-screen.js`, `public/css/auction.css` |
 | The Hall of Fame | `public/js/halloffame.js` |
 | Colours, spacing, anything visual | `public/css/theme.css` first — it is all tokens |
 

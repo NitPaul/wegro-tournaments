@@ -109,6 +109,9 @@ export const tournaments = {
   placeGuest: (tid, playerId, teamId) =>
     api.post(`/tournaments/${encodeURIComponent(tid)}/auction/guest`, { playerId, teamId }),
   resetAuction: (tid) => api.post(`/tournaments/${encodeURIComponent(tid)}/auction/reset`),
+  /** Put a player on the block for the projector, or pass null to clear it. */
+  block: (tid, playerId) => api.post(`/tournaments/${encodeURIComponent(tid)}/auction/block`, { playerId }),
+  addFromRoster: (tid, body) => api.post(`/tournaments/${encodeURIComponent(tid)}/players/from-roster`, body),
 
   generateFixtures: (tid, body) =>
     api.post(`/tournaments/${encodeURIComponent(tid)}/matches/generate`, body ?? {}),

@@ -210,17 +210,22 @@
               <h2 class="card__title">Teams &amp; captains</h2>
               <div id="teamList"></div>
               <div class="row row--spaced">
-                <input class="input grow" id="newTeamName" type="text" placeholder="Team name" maxlength="60" />
-                <input class="input grow" id="newCaptainName" type="text" placeholder="Captain's name" maxlength="40" />
+                <input class="input grow" id="newTeamName" type="text" placeholder="Team name" maxlength="60" aria-label="Team name" />
+                <select class="input grow" id="newCaptainPerson" aria-label="Captain from the roster"></select>
+                <input class="input grow" id="newCaptainName" type="text" placeholder="…or type a captain's name" maxlength="40" aria-label="Captain's name" />
                 <button class="btn btn--primary" id="addTeam" type="button">Add team</button>
               </div>
             </div>
 
             <div class="card">
-              <h2 class="card__title">Players</h2>
+              <div class="spread">
+                <h2 class="card__title">Players</h2>
+                <button class="btn btn--primary" id="openRosterPicker" type="button">Add from the roster</button>
+              </div>
               <p class="faint">
-                Auction players are bid on. Guests are free and outside every squad limit. A captain is
-                added with their team.
+                Pick people from the roster to put them in the auction pool — they come with their photo
+                and record. Or type a name below for someone new. Guests are free and outside every squad
+                limit; a captain is added with their team.
               </p>
               <div class="row">
                 <input class="input grow" id="newPlayerName" type="text" placeholder="Player name" maxlength="40" />
@@ -249,17 +254,56 @@
           <!-- Auction -->
           <section class="panel" id="panel-auction" role="tabpanel" aria-labelledby="tab-auction" hidden>
             <div class="card">
-              <h2 class="card__title">Sell a player</h2>
-              <div class="row">
-                <select class="input grow" id="sellPlayer" aria-label="Player"></select>
-                <select class="input grow" id="sellTeam" aria-label="Team"></select>
-                <input class="input input--score" id="sellPrice" type="number" min="0" step="1" aria-label="Price" />
-                <button class="btn btn--primary" id="sellBtn" type="button">Sell</button>
+              <div class="spread">
+                <div>
+                  <h2 class="card__title">Auction</h2>
+                  <p class="faint" id="deskProgress"></p>
+                </div>
+                <a class="btn btn--ghost" id="projectorLink" href="#" target="_blank" rel="noopener">Open projector screen ↗</a>
               </div>
-              <p class="faint" id="sellHint"></p>
             </div>
+
+            <div class="desk">
+              <div class="card block">
+                <div class="spread">
+                  <h2 class="card__title">On the block</h2>
+                  <button class="btn btn--sm btn--ghost" id="clearBlock" type="button" hidden>Take off the block</button>
+                </div>
+                <div class="block__player" id="blockPlayer"></div>
+                <div class="block__sell">
+                  <label class="field"><span>Team</span><select class="input" id="sellTeam"></select></label>
+                  <label class="field">
+                    <span>Price (BDT)</span>
+                    <input class="input input--score" id="sellPrice" type="number" min="0" step="1" inputmode="numeric" />
+                  </label>
+                  <div class="bid-steps" aria-label="Raise the price">
+                    <button class="btn btn--sm btn--ghost" type="button" data-bid="1">+1</button>
+                    <button class="btn btn--sm btn--ghost" type="button" data-bid="2">+2</button>
+                    <button class="btn btn--sm btn--ghost" type="button" data-bid="5">+5</button>
+                  </div>
+                  <button class="btn btn--primary btn--block block__go" id="sellBtn" type="button">Sold</button>
+                  <p class="faint" id="sellHint" aria-live="polite"></p>
+                </div>
+              </div>
+
+              <div class="card">
+                <h2 class="card__title">Pool</h2>
+                <div class="row desk-tools">
+                  <input class="input" id="deskSearch" type="search" placeholder="Find a player" aria-label="Find a player" />
+                  <div class="seg" id="deskPos" role="group" aria-label="Position">
+                    <button type="button" data-pos="" aria-pressed="true">All</button>
+                    <button type="button" data-pos="GK" aria-pressed="false">GK</button>
+                    <button type="button" data-pos="DEF" aria-pressed="false">DEF</button>
+                    <button type="button" data-pos="MID" aria-pressed="false">MID</button>
+                    <button type="button" data-pos="FWD" aria-pressed="false">FWD</button>
+                  </div>
+                </div>
+                <div class="pool-grid" id="poolGrid"></div>
+              </div>
+            </div>
+
             <div class="card"><h2 class="card__title">Budgets</h2><div id="captainGrid"></div></div>
-            <div class="card"><h2 class="card__title">Pool</h2><div id="poolList"></div></div>
+            <div class="card"><h2 class="card__title">Sold</h2><div id="poolList"></div></div>
           </section>
 
           <!-- Match day -->
@@ -359,6 +403,7 @@
       </main>
 
       <dialog class="dialog" id="personDialog" aria-label="Player"></dialog>
+      <dialog class="dialog" id="rosterDialog" aria-label="Add players from the roster"></dialog>
       <dialog class="dialog" id="bulkDialog" aria-label="Add players from photos"></dialog>
 
       <footer class="site-foot">

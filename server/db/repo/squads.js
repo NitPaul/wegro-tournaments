@@ -51,13 +51,16 @@ export function deleteTeam(teamId) {
 
 /* ---------------------------------------------------------------- players */
 
-export function createPlayer(tournamentId, { name, pos, teamId = null, price = null, kind = "auction", photo = null }) {
+export function createPlayer(
+  tournamentId,
+  { name, pos, teamId = null, price = null, kind = "auction", photo = null, personId = null },
+) {
   const id = newId("pl");
   const { n } = db.prepare("SELECT COUNT(*) AS n FROM players WHERE tournament_id = ?").get(tournamentId);
   db.prepare(
-    `INSERT INTO players (id, tournament_id, team_id, name, pos, kind, price, photo, sort_order)
-     VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)`,
-  ).run(id, tournamentId, teamId, name, pos, kind, price, photo, n);
+    `INSERT INTO players (id, tournament_id, team_id, name, pos, kind, price, photo, sort_order, person_id)
+     VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+  ).run(id, tournamentId, teamId, name, pos, kind, price, photo, n, personId);
   return id;
 }
 

@@ -14,6 +14,8 @@ import { auth, serverNow, syncClock, tournaments, transfer, watchTournament } fr
 import { renderAccounts, wireAccounts } from "./admin/accounts.js";
 import { renderOverview, wireOverview } from "./admin/overview.js";
 import { renderPlayers as renderRoster, tournamentChanged, wirePlayers } from "./admin/players.js";
+import { renderAuctionDesk, sellOnBlock, wireAuctionDesk } from "./admin/auction-desk.js";
+import { renderCaptainPicker, wireRosterPicker } from "./admin/roster-picker.js";
 
 const e = D.escapeHtml;
 
@@ -55,6 +57,8 @@ async function boot() {
   });
   wireAccounts({ getTournaments: () => myTournaments });
   wirePlayers(() => ({ me, data, perms }));
+  wireAuctionDesk(() => data);
+  wireRosterPicker(() => data);
   await refreshIdentity();
   setInterval(tickClock, 500);
 }
@@ -228,7 +232,8 @@ function renderAll() {
   renderTeams();
   renderPlayers();
   renderMatches();
-  renderAuction();
+  renderAuctionDesk();
+  renderCaptainPicker();
   renderLive();
   renderSettings();
   $("#statusSelect").value = data.status;
@@ -365,74 +370,6 @@ function renderMatches() {
       })
       .join("") || `<p class="faint">No fixtures yet.</p>`,
   );
-}
-
-function renderAuction() {
-  const state = D.auctionState(data);
-  const unsold = D.unsoldPlayers(data);
-
-  setHTML(
-    $("#sellPlayer"),
-    `<option value="">— pick a player —</option>` +
-      unsold.map((p) => `<option value="${e(p.id)}">${e(p.pos)} · ${e(p.name)}</option>`).join(""),
-  );
-  setHTML($("#sellTeam"), teamOptions(null, { blank: "— pick a team —" }));
-  $("#sellPrice").placeholder = String(D.getSettings(data).basePrice);
-
-  setHTML(
-    $("#captainGrid"),
-    D.teamsList(data)
-      .map((t) => {
-        const st = state[t.id];
-        if (!st) return "";
-        const chips = D.POSITIONS.map((pos) => `${pos} ${st.counts[pos]}/${st.max[pos]}`).join(" · ");
-        return `<div class="staff-row">
-          <b class="grow">${e(t.name)}</b>
-          <span class="pill pill--mint">${e(D.bdt(st.remaining))} left</span>
-          <span class="faint">${st.squad.length}/${st.squadSize} · ${e(chips)}</span>
-          <span class="faint">max bid ${e(D.bdt(st.maxBid))}</span>
-        </div>`;
-      })
-      .join("") || `<p class="faint">Add teams first.</p>`,
-  );
-
-  setHTML(
-    $("#poolList"),
-    D.auctionPlayers(data)
-      .map(
-        (p) => `<div class="people-row">
-          <span class="faint" style="min-width:34px">${e(p.pos)}</span>
-          <span class="grow">${e(p.name)}</span>
-          ${
-            p.teamId
-              ? `<span class="pill pill--mint">${e(D.teamById(data, p.teamId)?.name)} · ${e(D.bdt(p.price))}</span>
-                 <button class="btn btn--sm btn--ghost" data-unsell="${e(p.id)}" type="button">Unsell</button>`
-              : `<span class="pill">Available</span>`
-          }
-        </div>`,
-      )
-      .join("") || `<p class="faint">No auction pool.</p>`,
-  );
-
-  // Live feedback as the price is typed, using the same validator the server
-  // will run — so the message you see is the message you would have got.
-  const hint = () => {
-    const playerId = $("#sellPlayer").value;
-    const teamId = $("#sellTeam").value;
-    const price = Number($("#sellPrice").value);
-    if (!playerId || !teamId || !$("#sellPrice").value) return ($("#sellHint").textContent = "");
-    const res = D.validateSale(data, playerId, teamId, price);
-    $("#sellHint").textContent = res.ok ? "Looks good." : res.error;
-    $("#sellHint").className = res.ok ? "faint" : "faint err";
-  };
-  for (const id of ["#sellPlayer", "#sellTeam", "#sellPrice"]) {
-    const el = $(id);
-    if (!el.dataset.hinted) {
-      el.dataset.hinted = "1";
-      el.addEventListener("input", hint);
-      el.addEventListener("change", hint);
-    }
-  }
 }
 
 function renderLive() {
@@ -627,9 +564,14 @@ function wireConsole() {
       const name = $("#newTeamName").value.trim();
       if (!name) return toast("Give the team a name.", "err");
       return run(async () => {
-        await tournaments.addTeam(data.id, { name, captainName: $("#newCaptainName").value.trim() });
+        await tournaments.addTeam(data.id, {
+          name,
+          captainPersonId: $("#newCaptainPerson").value || undefined,
+          captainName: $("#newCaptainName").value.trim(),
+        });
         $("#newTeamName").value = "";
         $("#newCaptainName").value = "";
+        $("#newCaptainPerson").value = "";
       }, `${name} added.`);
     }
     if (t.dataset.teamDel) {
@@ -664,11 +606,12 @@ function wireConsole() {
 
     // --- auction
     if (t.id === "sellBtn") {
-      return run(async () => {
-        await tournaments.sell(data.id, $("#sellPlayer").value, $("#sellTeam").value, Number($("#sellPrice").value));
-        $("#sellPrice").value = "";
-        $("#sellHint").textContent = "";
-      }, "Sold.");
+      try {
+        toast(await sellOnBlock());
+      } catch (err) {
+        toast(err.message, "err");
+      }
+      return;
     }
     if (t.dataset.unsell) {
       return run(() => tournaments.unsell(data.id, t.dataset.unsell), "Returned to the pool.");

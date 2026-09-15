@@ -7,6 +7,7 @@
  *   /players/:id      one player
  *   /hall-of-fame     every champion
  *   /admin            the console
+ *   /auction/:slug    the auction projector screen
  *
  * Pages are served here rather than straight from the static folder for two
  * reasons: the addresses stay the same whatever file sits behind them, and
@@ -30,6 +31,7 @@ const PAGES = [
   ["/players/:id", "players.html"],
   ["/hall-of-fame", "hall-of-fame.html"],
   ["/admin", "admin.html"],
+  ["/auction/:slug", "auction.html"],
 ];
 
 /** Old file addresses, so a bookmark to /admin.html still lands. */

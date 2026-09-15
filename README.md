@@ -41,6 +41,7 @@ All three are fixed here, and the first two could not have been fixed in place.
 | **One tournament per admin** | An admin or referee account belongs to a single tournament and cannot see or change any other. Each tournament has a permanent code (`WGT-7F4C2A`) the super admin can follow even after its admin renames it. |
 | **Friendly matches** | A tournament with `format: friendly` — matches and a score, no auction, no table. |
 | **Fouls and cards** | Fouls, yellows and reds. They never move the scoreline. Second-yellow warning, red-card suspensions, a fair-play table. |
+| **Auction with faces** | Tap a player's photo to put them on the block; a projector screen at `/auction/<slug>` shows them to the room with their record, the team budgets, and a SOLD card with confetti for each sale. Teams and the auction pool are built by picking people from the roster. |
 | **Player roster** | Everyone who plays, with a photo, a usual position and a rating. Their goals, saves, titles and medals add up across every tournament. The super admin's rating (1–99) is the headline; a rating worked out from stats sits beside it. |
 | **Hall of Fame** | Every finished tournament: date, champion, runners-up, final score and all five medals. |
 | **Captains fixed** | Captains are players. Their goals, assists, cards and clean sheets count everywhere. |
@@ -291,6 +292,24 @@ every tournament route as another tournament's admin and expects to be refused.
 `test/domain/captains.test.js` exists specifically so the captain bug cannot come
 back quietly. If somebody ever "optimises" captains back out of the players
 list, that file goes red.
+
+---
+
+## Auction day
+
+1. **Before:** on the Players screen, make sure everyone playing has a photo and a
+   position. On the tournament's Setup tab, create the teams (pick each captain
+   from the roster) and use **Add from the roster** to fill the auction pool.
+2. **In the room:** open the console's **Auction** tab on the auctioneer's
+   laptop or phone, and press **Open projector screen**. Put that window on the
+   projector and press the full-screen button in its corner.
+3. **Each player:** tap their face in the pool. They appear on the projector
+   with their rating and record. Take bids, choose the team, type the price —
+   the desk says "Looks good" or exactly why the sale would break a rule —
+   then **Sold**. The projector shows SOLD, and the next face goes up.
+
+The projector screen needs no sign-in and changes nothing. If its laptop drops
+off the wifi, it catches up when it reconnects and still shows every sale.
 
 ---
 

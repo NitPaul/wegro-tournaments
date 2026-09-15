@@ -1302,3 +1302,282 @@ select.input.input--sm {
 .dialog:has(.bulk) {
   width: min(760px, calc(100vw - 24px));
 }
+
+/* ---------------------------------------------------- admin: auction desk */
+
+.desk {
+  display: grid;
+  gap: var(--gap);
+  grid-template-columns: minmax(0, 1fr);
+  align-items: start;
+}
+@media (min-width: 980px) {
+  .desk {
+    grid-template-columns: minmax(320px, 0.8fr) minmax(0, 1.2fr);
+  }
+  .desk .block {
+    position: sticky;
+    top: 76px;
+  }
+}
+.desk-face {
+  display: grid;
+  place-items: center;
+  width: 64px;
+  height: 64px;
+  border-radius: 14px;
+  object-fit: cover;
+  background: var(--surface-3);
+}
+.desk-face--empty {
+  color: var(--muted);
+  font-family: var(--font-display);
+  font-weight: 800;
+}
+.desk-face--xl {
+  width: 120px;
+  height: 120px;
+  border-radius: 20px;
+  font-size: 34px;
+  box-shadow: 0 0 0 3px rgba(241, 93, 44, 0.55);
+}
+.desk-face--sm {
+  width: 34px;
+  height: 34px;
+  border-radius: 50%;
+  font-size: 12px;
+}
+.block__player {
+  display: flex;
+  align-items: center;
+  gap: var(--space-4);
+  min-height: 130px;
+}
+.block__name {
+  font-size: 24px;
+  margin: var(--space-1) 0;
+}
+.block__record {
+  margin: 0;
+}
+.block__rating {
+  font-family: var(--font-display);
+  font-size: 18px;
+  color: var(--gold);
+}
+.block__empty {
+  display: grid;
+  gap: var(--space-1);
+  width: 100%;
+  padding: var(--space-5);
+  border: 2px dashed var(--line-strong);
+  border-radius: var(--radius-sm);
+  text-align: center;
+}
+.block__sell {
+  display: grid;
+  gap: var(--space-3);
+  margin-top: var(--space-4);
+}
+.block__sell .input--score {
+  font-size: 32px;
+  min-height: 60px;
+}
+.bid-steps {
+  display: flex;
+  gap: var(--space-2);
+}
+.bid-steps .btn {
+  flex: 1 1 0;
+}
+.block__go {
+  min-height: 56px;
+  font-size: 18px;
+}
+#sellHint {
+  margin: 0;
+  min-height: 1.4em;
+}
+#sellHint.ok {
+  color: var(--mint);
+}
+.desk-tools {
+  margin-bottom: var(--space-4);
+}
+.pool-grid {
+  display: grid;
+  gap: var(--space-2);
+  grid-template-columns: repeat(auto-fill, minmax(112px, 1fr));
+}
+.pool-pick {
+  display: grid;
+  justify-items: center;
+  gap: 6px;
+  padding: var(--space-2) var(--space-2) var(--space-3);
+  border-radius: var(--radius-sm);
+  border: 1px solid var(--line);
+  background: var(--surface);
+  color: var(--text);
+  cursor: pointer;
+  transition: border-color var(--dur-fast) ease, transform var(--dur-fast) ease;
+}
+.pool-pick:hover {
+  border-color: var(--line-strong);
+  transform: translateY(-2px);
+}
+.pool-pick .desk-face {
+  width: 80px;
+  height: 80px;
+}
+.pool-pick.is-up {
+  border-color: var(--brand-orange);
+  box-shadow: 0 0 0 2px rgba(241, 93, 44, 0.35);
+}
+.pool-pick__name {
+  font-size: 13px;
+  font-weight: 700;
+  line-height: 1.2;
+  text-align: center;
+}
+.budget-row {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr) auto;
+  align-items: center;
+  gap: var(--space-1) var(--space-3);
+  padding: var(--space-3) 0;
+  border-bottom: 1px solid var(--line);
+}
+.budget-row:last-child {
+  border-bottom: 0;
+}
+.budget-row__money {
+  text-align: right;
+  font-size: 14px;
+  color: var(--muted);
+}
+.budget-row__money b {
+  color: var(--mint);
+  font-size: 16px;
+}
+.budget-row__slots {
+  grid-column: 2 / -1;
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--space-1);
+  font-size: 13px;
+  color: var(--faint);
+}
+.slot-chip {
+  padding: 2px 8px;
+  border-radius: var(--radius-pill);
+  background: var(--surface-3);
+  color: var(--muted);
+  font-size: 12px;
+  font-weight: 700;
+}
+.slot-chip.is-full {
+  background: rgba(70, 220, 170, 0.14);
+  color: var(--mint);
+}
+
+/* --------------------------------------------- admin: pick from the roster */
+
+.dialog:has(.picker-roster) {
+  width: min(900px, calc(100vw - 24px));
+}
+.rp-grid {
+  display: grid;
+  gap: var(--space-2);
+  grid-template-columns: repeat(auto-fill, minmax(128px, 1fr));
+  max-height: 58vh;
+  overflow-y: auto;
+  padding: 2px;
+}
+.rp-card {
+  position: relative;
+  display: grid;
+  justify-items: center;
+  gap: 4px;
+  padding: var(--space-2);
+  border-radius: var(--radius-sm);
+  border: 1px solid var(--line);
+  background: var(--surface);
+  color: var(--text);
+  cursor: pointer;
+}
+.rp-card img,
+.rp-card__empty {
+  width: 88px;
+  height: 88px;
+  border-radius: 14px;
+  object-fit: cover;
+  display: grid;
+  place-items: center;
+  background: var(--surface-3);
+  color: var(--muted);
+  font-weight: 800;
+}
+.rp-card__name {
+  font-size: 13px;
+  font-weight: 700;
+  line-height: 1.2;
+  text-align: center;
+}
+.rp-card__meta {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 12px;
+}
+.rp-card.is-on {
+  border-color: var(--brand-orange);
+  background: rgba(241, 93, 44, 0.1);
+}
+.rp-card.is-on::after {
+  content: "✓";
+  position: absolute;
+  top: 6px;
+  right: 6px;
+  display: grid;
+  place-items: center;
+  width: 22px;
+  height: 22px;
+  border-radius: 50%;
+  background: var(--brand-orange);
+  color: var(--on-orange);
+  font-weight: 800;
+  font-size: 13px;
+}
+.rp-kind {
+  grid-auto-flow: column;
+  align-items: center;
+  gap: var(--space-2);
+}
+
+/* ------------------------------------------------------------ segmented */
+
+/* A row of mutually exclusive filters: All / GK / DEF / MID / FWD. Shared by
+   the public player list and the admin console. */
+.seg {
+  display: inline-flex;
+  padding: 4px;
+  gap: 2px;
+  border-radius: var(--radius-pill);
+  background: var(--surface);
+  border: 1px solid var(--line);
+}
+.seg button {
+  min-height: 36px;
+  padding: 0 14px;
+  border: 0;
+  border-radius: var(--radius-pill);
+  background: transparent;
+  color: var(--muted);
+  font-weight: 700;
+  cursor: pointer;
+}
+.seg button[aria-pressed="true"] {
+  background: var(--text);
+  color: var(--bg);
+}

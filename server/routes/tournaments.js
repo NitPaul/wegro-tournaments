@@ -61,7 +61,7 @@ import {
   updateEvent,
   updateMatch,
 } from "../db/repo/matches.js";
-import { db } from "../db/index.js";
+import { db, transaction } from "../db/index.js";
 
 export const tournamentRoutes = express.Router();
 
@@ -317,14 +317,18 @@ tournamentRoutes.post(
 
     // A captain can be named at the same moment, which is how teams are
     // actually created — nobody adds a team and then wonders who leads it.
-    const captain = String(req.body?.captainName ?? "").trim();
+    // Picked from the roster, they arrive already matched: photo and career.
+    const captainPerson = req.body?.captainPersonId ? getPerson(String(req.body.captainPersonId)) : null;
+    if (req.body?.captainPersonId && !captainPerson) throw notFoundError("That captain is not on the roster.");
+    const captain = captainPerson?.name ?? String(req.body?.captainName ?? "").trim();
     if (captain) {
       createPlayer(req.tournament.id, {
         name: captain,
-        pos: req.body?.captainPos ?? "MID",
+        pos: req.body?.captainPos ?? captainPerson?.pos ?? "MID",
         teamId: id,
         price: 0,
         kind: "captain",
+        personId: captainPerson?.id ?? null,
       });
     }
 
@@ -391,6 +395,64 @@ tournamentRoutes.post(
 
     audit(req, "player.create", { name, pos, kind, teamId });
     touched(req, res, "players", { playerId: id });
+  }),
+);
+
+/**
+ * Add people from the roster to this tournament in one go — the normal way to
+ * build an auction pool from the second tournament on. Each arrives matched to
+ * their roster person, so their photo and record come with them. Anyone already
+ * in the tournament is skipped and said so, not duplicated.
+ */
+tournamentRoutes.post(
+  "/:tid/players/from-roster",
+  requireTournament("admin"),
+  route(async (req, res) => {
+    const ids = Array.isArray(req.body?.personIds) ? [...new Set(req.body.personIds.map(String))] : [];
+    if (!ids.length) throw badRequest("Choose at least one player.");
+    if (ids.length > 200) throw badRequest("That is more players than a tournament can hold.");
+    const kind = req.body?.kind === "guest" ? "guest" : "auction";
+    const teamId = kind === "guest" ? req.body?.teamId || null : null;
+
+    const added = [];
+    const skipped = [];
+    transaction(() => {
+      for (const personId of ids) {
+        const person = getPerson(personId);
+        if (!person) {
+          skipped.push({ name: personId, reason: "not on the roster" });
+          continue;
+        }
+        const data = loadTournament(req.tournament.id);
+        if (Object.values(data.players).some((p) => p.personId === person.id)) {
+          skipped.push({ name: person.name, reason: "already in this tournament" });
+          continue;
+        }
+        if (!person.pos) {
+          skipped.push({ name: person.name, reason: "has no position — set one on the Players screen" });
+          continue;
+        }
+        const check = D.validateNewPlayer(data, { name: person.name, pos: person.pos, teamId, kind });
+        if (!check.ok) {
+          skipped.push({ name: person.name, reason: check.error });
+          continue;
+        }
+        createPlayer(req.tournament.id, {
+          name: person.name,
+          pos: person.pos,
+          teamId,
+          kind,
+          price: kind === "auction" ? null : 0,
+          personId: person.id,
+        });
+        added.push(person.name);
+      }
+    });
+
+    audit(req, "player.create_from_roster", { kind, added: added.length, skipped: skipped.length });
+    const data = loadTournament(req.tournament.id);
+    broadcast(req.tournament.id, "changed", { reason: "players" });
+    res.json({ tournament: data, added, skipped });
   }),
 );
 
@@ -472,12 +534,36 @@ tournamentRoutes.post(
     if (!check.ok) throw badRequest(check.error);
 
     setPlayerTeam(playerId, teamId, price);
+    // Sold, so off the block.
+    if (D.getSettings(data).auctionOnBlock === playerId) patchSettings(req.tournament.id, { auctionOnBlock: null });
     audit(req, "auction.sell", {
       player: data.players[playerId]?.name,
       team: data.teams[teamId]?.name,
       price,
     });
-    touched(req, res, "auction", { playerId, teamId });
+    touched(req, res, "auction", { playerId, teamId, price });
+  }),
+);
+
+/**
+ * Put a player "on the block" — the one being bid for now — or clear it with
+ * `playerId: null`. The projector screen shows whoever is on the block, so the
+ * room sees the face and the record while the bidding happens.
+ */
+tournamentRoutes.post(
+  "/:tid/auction/block",
+  requireTournament("admin"),
+  route(async (req, res) => {
+    const data = loadTournament(req.tournament.id);
+    const playerId = req.body?.playerId ? String(req.body.playerId) : null;
+    if (playerId) {
+      const player = data.players[playerId];
+      if (!player || !D.isAuctionPlayer(player)) throw notFoundError("No such player in the auction pool.");
+      if (player.teamId) throw badRequest(`${player.name} has already been sold.`);
+    }
+    patchSettings(req.tournament.id, { auctionOnBlock: playerId, auctionOnBlockAt: playerId ? Date.now() : null });
+    audit(req, "auction.block", { player: playerId ? data.players[playerId].name : null });
+    touched(req, res, "auction", { onBlock: playerId });
   }),
 );
 

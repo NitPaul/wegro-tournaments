@@ -234,6 +234,9 @@ export const DEFAULT_SETTINGS = {
   maxPerCategory: 2,
   maxGK: 1,
   auctionOpen: true,
+  // The player being bid for right now, shown on the projector screen.
+  auctionOnBlock: null,
+  auctionOnBlockAt: null,
 
   goldenBallPlayerId: null,
   goldenBootPlayerId: null,
