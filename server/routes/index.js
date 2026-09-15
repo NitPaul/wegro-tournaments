@@ -12,6 +12,7 @@ import express from "express";
 
 import { archiveRoutes } from "./archive.js";
 import { authRoutes } from "./auth.js";
+import { peopleRoutes } from "./people.js";
 import { streamRoutes } from "./stream.js";
 import { tournamentRoutes } from "./tournaments.js";
 import { transferRoutes } from "./transfer.js";
@@ -29,6 +30,7 @@ export function mountRoutes(app) {
   api.use("/auth", authRoutes);
   api.use("/users", userRoutes);
   api.use("/tournaments", tournamentRoutes);
+  api.use("/people", peopleRoutes);
   api.use("/archive", archiveRoutes);
   api.use("/import", transferRoutes);
   api.use("/stream", streamRoutes);

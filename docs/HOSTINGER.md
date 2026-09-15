@@ -198,6 +198,13 @@ docker compose start app
 > system is live and people are using it, never copy a file in this way — use
 > the restore procedure in `tools/restore.js` instead.
 
+### Player photos
+
+Photos are not in the repository and not in the zip. Once the site is up, sign in
+as the super admin and go to **Players → Add from photos**, then choose the
+whole folder of headshots. Each is shrunk in the browser and uploaded; it takes
+a few seconds for forty.
+
 ## 7. Check it worked
 
 ```bash

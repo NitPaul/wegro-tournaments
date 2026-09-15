@@ -16,6 +16,7 @@ import { attachUser } from "./auth/middleware.js";
 import { parseCookies } from "./http/cookies.js";
 import { notFound, errorHandler } from "./http/errors.js";
 import { mountRoutes } from "./routes/index.js";
+import { PHOTO_DIR, PHOTO_URL, ensurePhotoDir, isPhotoName } from "./photos.js";
 
 const here = path.dirname(fileURLToPath(import.meta.url));
 const root = path.resolve(here, "..");
@@ -56,7 +57,8 @@ export function createApp() {
         "default-src 'self'",
         "script-src 'self'",
         "style-src 'self' 'unsafe-inline'",
-        "img-src 'self' data:",
+        // blob: for the preview of a photo being cropped before upload.
+        "img-src 'self' data: blob:",
         "font-src 'self'",
         "connect-src 'self'",
         "frame-src https://www.google.com", // the venue map embed
@@ -79,6 +81,9 @@ export function createApp() {
 
   // Deliberately before everything else and dependency-free, so an orchestrator
   // gets a truthful answer even while the rest of the app is unhappy.
+  // Browsers ask for this whatever the page's <link rel="icon"> says.
+  app.get("/favicon.ico", (req, res) => res.redirect(301, "/assets/favicon.png"));
+
   app.get("/healthz", (req, res) => {
     res.json({ ok: true, uptime: Math.round(process.uptime()), now: Date.now() });
   });
@@ -113,6 +118,31 @@ export function createApp() {
   // The domain layer is shared verbatim between this server and the browser.
   // One definition of how a league table sorts, imported by both.
   app.use("/shared", express.static(path.join(root, "shared"), staticOptions));
+
+  // Player photos live in the data volume, not in the image. Every upload gets
+  // a new file name, so a photo can be cached for a year and a changed one is
+  // still seen at once. Only names the server generated are served.
+  ensurePhotoDir();
+  app.use(PHOTO_URL, (req, res, next) => {
+    if (!isPhotoName(req.path.slice(1))) return res.status(404).end();
+    next();
+  });
+  app.use(
+    PHOTO_URL,
+    express.static(PHOTO_DIR, {
+      fallthrough: false,
+      index: false,
+      dotfiles: "deny",
+      immutable: true,
+      maxAge: "365d",
+    }),
+    // A photo that has been replaced or removed is simply gone: 404, not the
+    // general error handler's 500.
+    (err, req, res, next) => {
+      if (res.headersSent) return next(err);
+      res.status(err.status === 404 || err.code === "ENOENT" ? 404 : 500).end();
+    },
+  );
   app.use(express.static(path.join(root, "public"), { ...staticOptions, extensions: ["html"] }));
 
   app.use(notFound);

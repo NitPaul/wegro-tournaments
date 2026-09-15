@@ -83,6 +83,7 @@
           <div class="tabs" id="tabs" role="tablist" aria-label="Admin sections">
             <button class="tab" id="tab-tournaments" role="tab" aria-controls="panel-tournaments" aria-selected="false" type="button" hidden>Tournaments</button>
             <button class="tab" id="tab-accounts" role="tab" aria-controls="panel-accounts" aria-selected="false" type="button" hidden>Accounts</button>
+            <button class="tab" id="tab-players" role="tab" aria-controls="panel-players" aria-selected="false" type="button" hidden>Players</button>
             <button class="tab" id="tab-setup" role="tab" aria-controls="panel-setup" aria-selected="true" type="button">Setup</button>
             <button class="tab" id="tab-auction" role="tab" aria-controls="panel-auction" aria-selected="false" type="button">Auction</button>
             <button class="tab" id="tab-live" role="tab" aria-controls="panel-live" aria-selected="false" type="button">▶ Match day</button>
@@ -163,6 +164,43 @@
             <div class="card">
               <h2 class="card__title">Accounts</h2>
               <div id="accountList"></div>
+            </div>
+          </section>
+
+          <!-- Players: the roster every tournament draws from -->
+          <section class="panel" id="panel-players" role="tabpanel" aria-labelledby="tab-players" hidden>
+            <div class="card">
+              <div class="spread">
+                <div>
+                  <h2 class="card__title">Players</h2>
+                  <p class="faint" id="peopleCount"></p>
+                </div>
+                <div class="card-buttons toolbar">
+                  <button class="btn btn--ghost" id="bulkAdd" type="button" hidden>Add from photos</button>
+                  <button class="btn btn--primary" id="addPerson" type="button" hidden>Add player</button>
+                  <input type="file" id="bulkFiles" accept="image/*" multiple hidden />
+                </div>
+              </div>
+              <div class="row toolbar-row">
+                <input class="input" id="peopleSearch" type="search" placeholder="Search by name" aria-label="Search players" />
+                <select class="input" id="peopleFilter" aria-label="Show">
+                  <option value="all">Everyone</option>
+                  <option value="nophoto">No photo yet</option>
+                  <option value="unrated">Not rated yet</option>
+                  <option value="new">Not played yet</option>
+                </select>
+              </div>
+              <div class="pgrid" id="peopleGrid"></div>
+            </div>
+
+            <div class="card" id="linkCard" hidden>
+              <h2 class="card__title">Match players to the roster</h2>
+              <p class="faint">
+                Say which roster person each player in <b id="linkTournament"></b> is. That puts their photo
+                on the scoreboard and adds their goals and saves to their record. The suggestions are
+                only suggestions — check the face.
+              </p>
+              <div id="linkList"></div>
             </div>
           </section>
 
@@ -319,6 +357,9 @@
         </div>
 
       </main>
+
+      <dialog class="dialog" id="personDialog" aria-label="Player"></dialog>
+      <dialog class="dialog" id="bulkDialog" aria-label="Add players from photos"></dialog>
 
       <footer class="site-foot">
         <div class="wrap spread">

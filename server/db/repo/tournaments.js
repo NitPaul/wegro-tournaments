@@ -14,6 +14,7 @@
 import { randomBytes } from "node:crypto";
 
 import { db, newId, transaction, uniqueSlug } from "../index.js";
+import { photoUrl } from "../../photos.js";
 
 const parse = (json, fallback = {}) => {
   try {
@@ -42,7 +43,11 @@ const playerOut = (r) => ({
   teamId: r.team_id,
   price: r.price,
   kind: r.kind,
-  photo: r.photo,
+  // The roster person this player is, if linked — which is where careers and
+  // photos come from. A person's uploaded photo wins over the old per-player
+  // path, which only the 2026 captains ever had.
+  personId: r.person_id ?? null,
+  photo: photoUrl(r.person_photo) ?? r.photo ?? null,
 });
 
 const eventOut = (r) => ({
@@ -100,7 +105,16 @@ export function loadTournament(key) {
   }
 
   const players = {};
-  for (const r of db.prepare("SELECT * FROM players WHERE tournament_id = ? ORDER BY sort_order, name").all(row.id)) {
+  const playerRows = db
+    .prepare(
+      `SELECT p.*, pp.photo AS person_photo
+         FROM players p
+         LEFT JOIN people pp ON pp.id = p.person_id
+        WHERE p.tournament_id = ?
+        ORDER BY p.sort_order, p.name`,
+    )
+    .all(row.id);
+  for (const r of playerRows) {
     players[r.id] = playerOut(r);
   }
 

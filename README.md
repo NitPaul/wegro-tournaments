@@ -40,6 +40,7 @@ All three are fixed here, and the first two could not have been fixed in place.
 | **One tournament per admin** | An admin or referee account belongs to a single tournament and cannot see or change any other. Each tournament has a permanent code (`WGT-7F4C2A`) the super admin can follow even after its admin renames it. |
 | **Friendly matches** | A tournament with `format: friendly` — matches and a score, no auction, no table. |
 | **Fouls and cards** | Fouls, yellows and reds. They never move the scoreline. Second-yellow warning, red-card suspensions, a fair-play table. |
+| **Player roster** | Everyone who plays, with a photo, a usual position and a rating. Their goals, saves, titles and medals add up across every tournament. The super admin's rating (1–99) is the headline; a rating worked out from stats sits beside it. |
 | **Hall of Fame** | Every finished tournament: date, champion, runners-up, final score and all five medals. |
 | **Captains fixed** | Captains are players. Their goals, assists, cards and clean sheets count everywhere. |
 | **Tests** | Standings, points, medals, the auction, cards, migrations, and who may do what — run before every deploy. The old project had none. |
@@ -197,10 +198,32 @@ scorers, medals and squads should agree exactly.
 npm run backup     # or: docker compose exec app npm run backup
 ```
 
-Writes two files: an exact `.sqlite` copy (made with `VACUUM INTO`, so it is
-consistent even mid-match) and a readable `.json` dump. Restore with
-`npm run restore <file.json>`, or by putting the `.sqlite` file back — see the
-comment at the top of `tools/restore.js`.
+Writes an exact `.sqlite` copy (made with `VACUUM INTO`, so it is consistent
+even mid-match), a readable `.json` dump, and a `-photos` folder with every
+player photo. Restore with `npm run restore <file.json>`, which puts the photos
+back too, or by putting the `.sqlite` file and the photos back — see the comment
+at the top of `tools/restore.js`.
+
+---
+
+## Player photos
+
+Photos are **data, not code**. They are uploaded through the console, stored in
+the data volume beside the database (`DATA_DIR/photos`), included in backups,
+and never committed to this repository — which is public, and these are
+people's faces.
+
+**Admin → Players → Add from photos** takes a whole folder of headshots at once.
+Each one becomes a player, named from its file name (`mahmud-hasan-munna.png` →
+"Mahmud Hasan Munna"), cropped to the face and shrunk **in the browser** to a
+512px WebP of about 20 KB before it is sent. So the server needs no image
+library, and uploads stay far below nginx's default 1 MB limit. The 41 2026
+headshots went from 79 MB to under 1 MB in about five seconds.
+
+Then **Match players to the roster** says which roster person each tournament
+player is. It suggests matches by name, but a person always confirms — short
+names on a scoresheet ("Mahmud", "Munna") and full names on photos do not map
+one to one, and a wrong match puts the wrong face on somebody.
 
 Take one after the auction and again before kick-off.
 

@@ -43,16 +43,18 @@ export async function startTestServer() {
   /** A client with its own cookie jar. */
   function client() {
     let cookie = "";
-    const call = async (method, url, body) => {
-      const res = await fetch(base + url, {
-        method,
-        headers: {
-          ...(body === undefined ? {} : { "content-type": "application/json" }),
-          ...(cookie ? { cookie } : {}),
-        },
-        body: body === undefined ? undefined : JSON.stringify(body),
-        redirect: "manual",
-      });
+    /** `opts.raw` sends bytes as-is with `opts.type` — for photo uploads. */
+    const call = async (method, url, body, opts = {}) => {
+      const headers = { ...(cookie ? { cookie } : {}) };
+      let payload;
+      if (opts.raw) {
+        headers["content-type"] = opts.type ?? "application/octet-stream";
+        payload = opts.raw;
+      } else if (body !== undefined) {
+        headers["content-type"] = "application/json";
+        payload = JSON.stringify(body);
+      }
+      const res = await fetch(base + url, { method, headers, body: payload, redirect: "manual" });
       const set = res.headers.getSetCookie?.() ?? [];
       for (const c of set) {
         const pair = c.split(";")[0];
@@ -88,5 +90,5 @@ export async function startTestServer() {
     fs.rmSync(dataDir, { recursive: true, force: true });
   }
 
-  return { base, db: dbm.db, makeUser, client, stop };
+  return { base, dataDir, db: dbm.db, makeUser, client, stop };
 }

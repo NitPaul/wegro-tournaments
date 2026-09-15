@@ -13,6 +13,7 @@ import { $, $$, confirmPhrase, rememberTab, setHTML, show, toast, wireSiteHeader
 import { auth, serverNow, syncClock, tournaments, transfer, watchTournament } from "./api.js";
 import { renderAccounts, wireAccounts } from "./admin/accounts.js";
 import { renderOverview, wireOverview } from "./admin/overview.js";
+import { renderPlayers as renderRoster, tournamentChanged, wirePlayers } from "./admin/players.js";
 
 const e = D.escapeHtml;
 
@@ -35,6 +36,7 @@ async function boot() {
   selectTab = wireTabs($("#tabs"), {
     onChange: (n) => {
       saveTab(n);
+      if (n === "players") renderRoster();
       // The tournament bar says which tournament the tabs act on. The super
       // admin's Tournaments and Accounts screens act on none, so hide it there.
       $("#adminView").classList.toggle("on-global-tab", n === "tournaments" || n === "accounts");
@@ -52,6 +54,7 @@ async function boot() {
     refresh: refreshIdentity,
   });
   wireAccounts({ getTournaments: () => myTournaments });
+  wirePlayers(() => ({ me, data, perms }));
   await refreshIdentity();
   setInterval(tickClock, 500);
 }
@@ -182,6 +185,7 @@ function applyRole() {
   show($("#tab-live"), canRead);
   show($("#tab-settings"), canRead && perms.role !== "referee");
   show($("#tab-danger"), loaded && isSuper);
+  show($("#tab-players"), isSuper || perms.role === "admin");
 
   if (loaded) {
     const current = myTournaments.find((t) => t.id === data.id);
@@ -228,6 +232,7 @@ function renderAll() {
   renderLive();
   renderSettings();
   $("#statusSelect").value = data.status;
+  tournamentChanged();
   // Re-apply after re-rendering, so freshly drawn controls are disabled too.
   if (perms.readOnly) applyRole();
 }

@@ -20,6 +20,7 @@ import { audit, recentAudit } from "../audit.js";
 import { requireSuper, requireTournament, permissionsFor } from "../auth/middleware.js";
 import { badRequest, conflict, forbidden, notFoundError, route } from "../http/errors.js";
 import { broadcast } from "../stream/sse.js";
+import { getPerson, linkPlayer } from "../db/repo/people.js";
 import { recomputeArchive, removeArchive } from "../db/repo/archive.js";
 import {
   assignmentOf,
@@ -428,6 +429,29 @@ tournamentRoutes.delete(
 
     audit(req, "player.delete", { name: data.players[req.params.playerId]?.name });
     deletePlayer(req.params.playerId);
+    touched(req, res, "players");
+  }),
+);
+
+/**
+ * Say which roster person a tournament player is — or `personId: null` to
+ * unlink. This is what puts a face on the player and carries their goals into
+ * their career. Suggestions are made in the browser; a person only ever gets
+ * linked by somebody choosing them.
+ */
+tournamentRoutes.post(
+  "/:tid/players/:playerId/person",
+  requireTournament("admin"),
+  route(async (req, res) => {
+    const player = getPlayer(req.params.playerId);
+    if (!player || player.tournament_id !== req.tournament.id) throw notFoundError("No such player in this tournament.");
+
+    const personId = req.body?.personId ? String(req.body.personId) : null;
+    const person = personId ? getPerson(personId) : null;
+    if (personId && !person) throw notFoundError("No such person on the roster.");
+
+    linkPlayer(player.id, personId);
+    audit(req, "player.link", { player: player.name, person: person?.name ?? null });
     touched(req, res, "players");
   }),
 );

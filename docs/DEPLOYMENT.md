@@ -95,15 +95,20 @@ Secure and sign-in will fail in a way that looks like a wrong password.
 
 ## Data and backups
 
-Everything lives in the `wegro-data` volume as a single SQLite file. Rebuilding
-or updating the image never touches it.
+Everything lives in the `wegro-data` volume: the SQLite file, and a `photos/`
+folder of player pictures uploaded through the console. Rebuilding or updating
+the image never touches either.
 
 ```bash
 docker compose exec app npm run backup
 ```
 
-Writes a consistent `.sqlite` copy (via `VACUUM INTO`, safe to run mid-match)
-and a readable `.json` dump into the `wegro-backups` volume.
+Writes a consistent `.sqlite` copy (via `VACUUM INTO`, safe to run mid-match),
+a readable `.json` dump, and a copy of the photos folder into the
+`wegro-backups` volume.
+
+Photo uploads need no proxy changes: the browser shrinks every photo to about
+20 KB before sending it, far below nginx's default `client_max_body_size`.
 
 A daily cron, copied off the host:
 

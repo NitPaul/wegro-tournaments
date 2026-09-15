@@ -948,3 +948,357 @@ tr.is-q td {
 .people-row.is-off {
   opacity: 0.6;
 }
+
+/* ---------------------------------------------------------------- avatars */
+
+/* A person's photo, or their initials where there is none yet. Always square
+   and always the same box, so a grid never jumps as photos load. */
+.avatar {
+  display: inline-grid;
+  place-items: center;
+  flex: 0 0 auto;
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  object-fit: cover;
+  background: var(--surface-3);
+  color: var(--muted);
+  font-family: var(--font-display);
+  font-weight: 800;
+  font-size: 14px;
+}
+.avatar--xs {
+  width: 22px;
+  height: 22px;
+  font-size: 9px;
+}
+.avatar--sm {
+  width: 48px;
+  height: 48px;
+  border-radius: 12px;
+}
+.avatar--xl {
+  width: 168px;
+  height: 168px;
+  border-radius: 24px;
+  font-size: 48px;
+}
+
+/* --------------------------------------------------------- admin: players */
+
+.toolbar {
+  align-items: center;
+}
+.toolbar .btn {
+  flex: 0 0 auto;
+}
+.toolbar-row {
+  margin: var(--space-3) 0 var(--space-4);
+}
+.pgrid {
+  display: grid;
+  gap: var(--space-3);
+  grid-template-columns: repeat(auto-fill, minmax(min(100%, 250px), 1fr));
+}
+.pcard {
+  display: grid;
+  grid-template-columns: 56px minmax(0, 1fr) auto;
+  align-items: center;
+  gap: var(--space-3);
+  padding: var(--space-3);
+  border-radius: var(--radius-sm);
+  border: 1px solid var(--line);
+  background: var(--surface);
+  color: var(--text);
+  text-align: left;
+  cursor: pointer;
+  transition: border-color var(--dur-fast) ease, background var(--dur-fast) ease, transform var(--dur-fast) ease;
+}
+.pcard:hover {
+  border-color: var(--line-strong);
+  background: var(--surface-2);
+}
+.pcard:active {
+  transform: translateY(1px);
+}
+.pcard__photo {
+  width: 56px;
+  height: 56px;
+  border-radius: 14px;
+  object-fit: cover;
+  display: grid;
+  place-items: center;
+  background: var(--surface-3);
+  color: var(--muted);
+  font-family: var(--font-display);
+  font-weight: 800;
+}
+.pcard__body {
+  display: grid;
+  gap: 4px;
+  min-width: 0;
+}
+/* Two lines rather than an ellipsis: "Mahmud Hasan Munna" cut to "Mahmud Ha…"
+   is not a name anybody recognises. */
+.pcard__name {
+  font-weight: 700;
+  line-height: 1.25;
+  overflow: hidden;
+  display: -webkit-box;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 2;
+  line-clamp: 2;
+}
+.pcard__meta {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  font-size: 12px;
+}
+.pcard__rating {
+  display: grid;
+  justify-items: center;
+  min-width: 52px;
+  font-family: var(--font-display);
+  font-size: 22px;
+  font-weight: 800;
+  line-height: 1;
+}
+.pcard__rating small {
+  margin-top: 4px;
+  font-family: var(--font);
+  font-size: 10px;
+  font-weight: 600;
+  color: var(--faint);
+}
+.rating--elite {
+  color: var(--gold);
+}
+.rating--strong {
+  color: var(--mint);
+}
+.rating--good {
+  color: var(--text);
+}
+.rating--developing,
+.rating--none {
+  color: var(--muted);
+}
+
+.link-row {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-2) var(--space-4);
+  padding: var(--space-3) 0;
+  border-bottom: 1px solid var(--line);
+}
+.link-row__who {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  min-width: 180px;
+}
+.link-row__choices {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--space-2);
+}
+.link-suggest {
+  border-color: rgba(70, 220, 170, 0.45);
+}
+.link-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-2);
+  font-size: 14px;
+}
+.link-done {
+  margin-top: var(--space-4);
+}
+.link-done summary {
+  cursor: pointer;
+  color: var(--muted);
+  font-weight: 600;
+}
+.input.input--sm,
+select.input.input--sm {
+  min-height: 36px;
+  width: auto;
+  max-width: 220px;
+  padding: 6px 30px 6px 10px;
+  font-size: 14px;
+}
+.link-row__choices {
+  justify-content: flex-end;
+}
+
+/* ---------------------------------------------------------------- dialogs */
+
+.dialog {
+  width: min(560px, calc(100vw - 24px));
+  max-height: calc(100vh - 24px);
+  padding: 0;
+  border: 1px solid var(--line-strong);
+  border-radius: var(--radius);
+  background: var(--bg-2);
+  color: var(--text);
+  box-shadow: var(--shadow-lg);
+}
+.dialog::backdrop {
+  background: rgba(2, 14, 12, 0.72);
+  backdrop-filter: blur(2px);
+}
+.dialog__panel {
+  display: grid;
+  gap: var(--space-4);
+  padding: var(--space-5);
+}
+.dialog__head,
+.dialog__foot {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-3);
+}
+.dialog__head h2 {
+  font-size: 20px;
+}
+.check {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-2);
+  font-size: 14px;
+  color: var(--muted);
+  cursor: pointer;
+}
+.file-btn {
+  position: relative;
+  overflow: hidden;
+}
+.file-btn input {
+  position: absolute;
+  inset: 0;
+  opacity: 0;
+  cursor: pointer;
+}
+.person-editor__photo {
+  display: grid;
+  justify-items: center;
+  gap: var(--space-3);
+}
+.person-editor__photo .card-buttons {
+  justify-content: center;
+}
+.person-editor__record {
+  margin: 0;
+}
+.rating-edit {
+  margin: 0;
+  padding: var(--space-3) var(--space-4) var(--space-4);
+  border: 1px solid var(--line);
+  border-radius: var(--radius-sm);
+  display: grid;
+  gap: var(--space-2);
+}
+.rating-edit legend {
+  padding: 0 var(--space-2);
+  font-weight: 700;
+}
+.rating-edit__row {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+}
+.rating-edit__row input {
+  flex: 1 1 auto;
+  accent-color: var(--brand-orange);
+}
+.rating-edit__value {
+  min-width: 48px;
+  text-align: center;
+  font-family: var(--font-display);
+  font-size: 28px;
+  font-weight: 800;
+}
+.rating-edit p {
+  margin: 0;
+}
+
+.crop {
+  display: grid;
+  justify-items: center;
+  gap: var(--space-2);
+}
+.crop__canvas {
+  width: min(280px, 70vw);
+  height: auto;
+  aspect-ratio: 1;
+  border-radius: 20px;
+  cursor: grab;
+  touch-action: none;
+  background: var(--surface);
+}
+.crop__canvas:active {
+  cursor: grabbing;
+}
+.crop__zoom {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+  width: min(280px, 70vw);
+  font-size: 13px;
+  color: var(--muted);
+}
+.crop__zoom input {
+  flex: 1 1 auto;
+  accent-color: var(--brand-orange);
+}
+.crop__hint {
+  margin: 0;
+}
+
+.bulk {
+  max-height: calc(100vh - 24px);
+}
+.bulk__list {
+  display: grid;
+  gap: var(--space-2);
+  max-height: 55vh;
+  overflow-y: auto;
+  padding-right: var(--space-1);
+}
+.bulk__row {
+  display: grid;
+  grid-template-columns: 48px minmax(0, 1fr) 110px auto;
+  align-items: center;
+  gap: var(--space-2);
+  padding: var(--space-2);
+  border-radius: var(--radius-sm);
+  background: var(--surface);
+  border: 1px solid transparent;
+}
+.bulk__row.is-done {
+  border-color: rgba(70, 220, 170, 0.5);
+}
+.bulk__row.is-error {
+  border-color: rgba(239, 90, 90, 0.55);
+}
+.bulk__row .avatar--sm {
+  width: 48px;
+  height: 48px;
+}
+@media (max-width: 560px) {
+  .bulk__row {
+    grid-template-columns: 48px minmax(0, 1fr);
+  }
+  .bulk__row .check,
+  .bulk__row select {
+    grid-column: 2;
+  }
+}
+.dialog:has(.bulk) {
+  width: min(760px, calc(100vw - 24px));
+}

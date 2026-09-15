@@ -138,6 +138,40 @@ export const users = {
   remove: (id) => api.del(`/users/${id}`),
 };
 
+export const people = {
+  list: () => api.get("/people"),
+  get: (id) => api.get(`/people/${encodeURIComponent(id)}`),
+  create: (body) => api.post("/people", body),
+  update: (id, body) => api.patch(`/people/${encodeURIComponent(id)}`, body),
+  remove: (id) => api.del(`/people/${encodeURIComponent(id)}`),
+  removePhoto: (id) => api.del(`/people/${encodeURIComponent(id)}/photo`),
+
+  /** Upload an already-resized image Blob. */
+  async uploadPhoto(id, blob) {
+    let res;
+    try {
+      res = await fetch(`/api/people/${encodeURIComponent(id)}/photo`, {
+        method: "PUT",
+        headers: { "Content-Type": blob.type || "application/octet-stream" },
+        body: blob,
+        credentials: "same-origin",
+      });
+    } catch {
+      throw new ApiError(0, "offline", "Cannot reach the server. Check your connection.");
+    }
+    const payload = await res.json().catch(() => null);
+    if (!res.ok) {
+      const err = payload?.error ?? {};
+      throw new ApiError(res.status, err.code ?? "error", err.message ?? `Upload failed (${res.status}).`);
+    }
+    return payload;
+  },
+
+  /** Say which roster person a tournament player is, or pass null to unlink. */
+  link: (tid, playerId, personId) =>
+    api.post(`/tournaments/${encodeURIComponent(tid)}/players/${encodeURIComponent(playerId)}/person`, { personId }),
+};
+
 export const archive = {
   list: () => api.get("/archive"),
 };

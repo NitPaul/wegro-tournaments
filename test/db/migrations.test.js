@@ -12,6 +12,7 @@ import fs from "node:fs";
 import os from "node:os";
 import path from "node:path";
 import { after, before, describe, it } from "node:test";
+import { fileURLToPath } from "node:url";
 
 let dbm;
 let workDir;
@@ -30,6 +31,12 @@ after(() => {
 });
 
 const quiet = () => {};
+
+/** The highest numbered migration file — what a fully migrated database reports. */
+function latestMigration() {
+  const dir = path.join(path.dirname(fileURLToPath(import.meta.url)), "../../server/db/migrations");
+  return Math.max(...fs.readdirSync(dir).filter((f) => f.endsWith(".sql")).map((f) => Number.parseInt(f, 10)));
+}
 
 /** A fresh database at version 0 — the base schema, no migrations. */
 function resetToBase() {
@@ -208,14 +215,64 @@ describe("migration 001 — accounts and codes", () => {
     );
   });
 
-  it("records version 1 only once it has succeeded", () => {
+  it("records each version once, and running again changes nothing", () => {
     resetToBase();
     seedLegacy();
     dbm.applyMigrations({ log: quiet });
-    assert.equal(dbm.db.prepare("PRAGMA user_version").get().user_version, 1);
-    // Running again is a no-op rather than a second rebuild.
+    const latest = latestMigration();
+    assert.equal(dbm.db.prepare("PRAGMA user_version").get().user_version, latest);
+
+    const before = dbm.db.prepare("SELECT username FROM users ORDER BY id").all().map((r) => r.username);
     dbm.applyMigrations({ log: quiet });
-    assert.equal(dbm.db.prepare("PRAGMA user_version").get().user_version, 1);
+    assert.equal(dbm.db.prepare("PRAGMA user_version").get().user_version, latest);
+    assert.deepEqual(
+      dbm.db.prepare("SELECT username FROM users ORDER BY id").all().map((r) => r.username),
+      before,
+      "a second run is not a second rebuild",
+    );
+  });
+});
+
+describe("migration 002 — the player roster", () => {
+  it("adds people, and lets a tournament player point at one", () => {
+    resetToBase();
+    seedLegacy();
+    dbm.applyMigrations({ log: quiet });
+
+    dbm.db
+      .prepare("INSERT INTO people (id, name, pos, created_at, updated_at) VALUES ('pp_munna', 'Mahmud Hasan Munna', 'FWD', 1, 1)")
+      .run();
+    dbm.db.prepare("UPDATE players SET person_id = 'pp_munna' WHERE id = 'pl_1'").run();
+    assert.equal(dbm.db.prepare("SELECT person_id FROM players WHERE id = 'pl_1'").get().person_id, "pp_munna");
+  });
+
+  it("leaves every existing player in place and unlinked", () => {
+    resetToBase();
+    seedLegacy();
+    dbm.applyMigrations({ log: quiet });
+    const row = dbm.db.prepare("SELECT name, team_id, person_id FROM players WHERE id = 'pl_1'").get();
+    assert.equal(row.name, "Munna");
+    assert.equal(row.team_id, "tm_1");
+    assert.equal(row.person_id, null);
+  });
+
+  it("keeps the player when their person is deleted, just unlinked", () => {
+    resetToBase();
+    seedLegacy();
+    dbm.applyMigrations({ log: quiet });
+    dbm.db.prepare("INSERT INTO people (id, name, created_at, updated_at) VALUES ('pp_x', 'X', 1, 1)").run();
+    dbm.db.prepare("UPDATE players SET person_id = 'pp_x' WHERE id = 'pl_1'").run();
+    dbm.db.prepare("DELETE FROM people WHERE id = 'pp_x'").run();
+    assert.equal(dbm.db.prepare("SELECT person_id FROM players WHERE id = 'pl_1'").get().person_id, null);
+  });
+
+  it("refuses a rating outside 1–99", () => {
+    resetToBase();
+    dbm.applyMigrations({ log: quiet });
+    assert.throws(
+      () => dbm.db.prepare("INSERT INTO people (id, name, rating, created_at, updated_at) VALUES ('pp_y', 'Y', 100, 1, 1)").run(),
+      /CHECK/,
+    );
   });
 });
 

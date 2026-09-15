@@ -104,12 +104,29 @@ export function broadcast(tournamentId, event, payload = {}) {
   const body = { ...payload, tournamentId, at: Date.now() };
   let delivered = 0;
 
+  for (const listener of listeners) {
+    try {
+      listener(tournamentId, event, body);
+    } catch (err) {
+      console.error("[sse] a change listener failed:", err.message);
+    }
+  }
+
   for (const room of [tournamentId, "*"]) {
     for (const client of rooms.get(room) ?? []) {
       if (send(client, event, body)) delivered++;
     }
   }
   return delivered;
+}
+
+/** In-process listeners told about every change — used to drop caches such as the roster. */
+const listeners = new Set();
+
+/** Be told whenever anything changes. Returns an unsubscribe. */
+export function onBroadcast(fn) {
+  listeners.add(fn);
+  return () => listeners.delete(fn);
 }
 
 export function streamStats() {
