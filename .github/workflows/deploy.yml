@@ -61,6 +61,21 @@ jobs:
 
             cd "$DIRECTORY"
 
+            # Remember what is running now, so a bad deploy can be undone.
+            PREVIOUS=\$(git rev-parse HEAD)
+            PORT=\$(grep -E '^PORT=' .env | cut -d= -f2)
+            PORT=\${PORT:-3000}
+
+            # A backup from the version that is still running, before anything
+            # changes. A new version can migrate the database on its first
+            # start; this is the copy to go back to if that ever goes wrong.
+            # No backup, no deploy.
+            echo "💾 Backing up before deploying..."
+            if ! docker compose exec -T app npm run backup; then
+              echo "❌ The backup failed, so nothing was deployed. Check that the app is running."
+              exit 1
+            fi
+
             echo "📦 Pulling latest code..."
             git pull origin main
 
@@ -78,33 +93,40 @@ jobs:
             echo "🔨 Building and starting..."
             docker compose up -d --build
 
-            # Drop now-unused images from previous deploys. Safe: this only
-            # touches images, never volumes, so wegro-data/wegro-backups are
-            # never at risk here.
-            echo "🧹 Pruning old images..."
-            docker image prune -f
-
-            # PORT lives in .env on the server (gitignored, not this repo),
-            # so read it back rather than hardcoding it here. Backslashes
-            # below keep these expansions on the remote shell, not the runner.
-            PORT=\$(grep -E '^PORT=' .env | cut -d= -f2)
-            PORT=\${PORT:-3000}
+            wait_healthy() {
+              for i in \$(seq 1 20); do
+                if curl -sf "http://127.0.0.1:\$PORT/healthz" > /dev/null; then
+                  return 0
+                fi
+                sleep 3
+              done
+              return 1
+            }
 
             echo "🩺 Waiting for health check on port \$PORT..."
-            healthy=""
-            for i in \$(seq 1 10); do
-              if curl -sf "http://127.0.0.1:\$PORT/healthz" > /dev/null; then
-                healthy=1
-                break
-              fi
-              sleep 3
-            done
-
-            if [ -n "\$healthy" ]; then
+            if wait_healthy; then
               echo "✅ Healthy"
+              # Only now: until the new version is known good, the old image
+              # is what a rollback would reuse.
+              echo "🧹 Pruning old images..."
+              docker image prune -f
             else
-              echo "❌ App did not become healthy — recent logs:"
-              docker compose logs app --tail 50
+              echo "❌ The new version did not become healthy — recent logs:"
+              docker compose logs app --tail 80
+
+              # Put the previous version back rather than leave the site down.
+              # A migration that fails is rolled back inside its own
+              # transaction, so the database the old version finds is the one
+              # it left. If anything looks wrong, the backup taken above is in
+              # the wegro-backups volume.
+              echo "⏪ Rolling back to \$PREVIOUS..."
+              git reset --hard "\$PREVIOUS"
+              docker compose up -d --build
+              if wait_healthy; then
+                echo "↩️  Rolled back. The site is running the previous version."
+              else
+                echo "🚨 The rollback did not come up either. Check the server now."
+              fi
               exit 1
             fi
           EOF
