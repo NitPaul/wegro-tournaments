@@ -6,26 +6,37 @@
     <title>Hall of Fame — WeGro Tournaments</title>
     <meta name="description" content="Every WeGro tournament, its champions and its medal winners." />
 
-    <link rel="icon" href="assets/favicon.png" />
+    <link rel="icon" href="/assets/favicon.svg" type="image/svg+xml" />
+    <link rel="icon" href="/assets/favicon.png" type="image/png" sizes="256x256" />
+    <link rel="apple-touch-icon" href="/assets/apple-touch-icon.png" />
+    <meta name="theme-color" content="#03201c" />
     <link rel="stylesheet" href="css/theme.css" />
     <link rel="stylesheet" href="css/public.css" />
     <link rel="stylesheet" href="css/app.css" />
   </head>
   <body>
     <header class="site-head">
-      <div class="wrap row spread">
+      <div class="wrap site-head__bar">
         <a class="brand" href="/">
-          <img src="assets/wegro-logo.png" alt="WeGro" height="28" />
-          <span class="brand__title">Hall of Fame</span>
+          <img src="/assets/wegro-logo-on-dark.svg" alt="WeGro" width="88" height="24" />
+          <span class="brand__title">Tournaments</span>
         </a>
-        <a class="btn btn--ghost btn--sm" href="/">Live scoreboard</a>
+        <button class="menu-btn" type="button" aria-expanded="false" aria-controls="siteNav">
+          <span class="menu-btn__icon" aria-hidden="true"></span><span>Menu</span>
+        </button>
+        <nav class="site-nav" id="siteNav" aria-label="Site">
+          <a href="/">Scoreboard</a>
+          <a href="/hall-of-fame">Hall of Fame</a>
+          <a class="site-nav__cta" href="/admin">Admin</a>
+        </nav>
       </div>
     </header>
 
     <main class="wrap stack">
-      <section class="hero">
-        <h1 class="hero__title">Hall of Fame</h1>
-        <p class="hero__sub">Every tournament we have run, and who won it.</p>
+      <section class="page-intro">
+        <p class="eyebrow">Since 2026</p>
+        <h1 class="page-intro__title">Hall of Fame</h1>
+        <p class="page-intro__sub">Every tournament we have run, and who won it.</p>
       </section>
 
       <div class="empty-state" id="loading"><div class="spinner"></div><p>Loading…</p></div>

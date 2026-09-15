@@ -9,7 +9,7 @@
  */
 
 import * as D from "/shared/domain/index.js";
-import { $, $$, confirmPhrase, rememberTab, setHTML, show, toast, wireTabs } from "./ui.js";
+import { $, $$, confirmPhrase, rememberTab, setHTML, show, toast, wireSiteHeader, wireTabs } from "./ui.js";
 import { auth, serverNow, syncClock, tournaments, transfer, users, watchTournament } from "./api.js";
 
 const e = D.escapeHtml;
@@ -26,6 +26,7 @@ let mode = "login";
 boot();
 
 async function boot() {
+  wireSiteHeader();
   await syncClock();
   wireAuthForm();
 

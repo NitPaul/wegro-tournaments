@@ -9,17 +9,188 @@
 
 /* ------------------------------------------------------------ site header */
 
-.brand {
+/* One header for every page. On a phone the navigation folds behind a Menu
+   button instead of wrapping onto a second row; ui.js wireSiteHeader() does the
+   toggling. */
+.site-head {
+  position: sticky;
+  top: 0;
+  z-index: 40;
+  background: rgba(2, 24, 21, 0.78);
+  backdrop-filter: blur(14px) saturate(1.2);
+  -webkit-backdrop-filter: blur(14px) saturate(1.2);
+  border-bottom: 1px solid var(--line);
+}
+.site-head__bar {
   display: flex;
   align-items: center;
-  gap: 10px;
-  text-decoration: none;
+  gap: var(--space-3);
+  min-height: 60px;
+}
+.brand {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-3);
+  min-height: var(--tap);
+  min-width: 0;
+  margin-right: auto;
   color: var(--text);
+  text-decoration: none;
+}
+.brand:hover {
+  text-decoration: none;
+}
+.brand img {
+  height: 24px;
+  width: auto;
+  flex: 0 0 auto;
 }
 .brand__title {
   font-family: var(--font-display);
   font-weight: 700;
+  font-size: 15px;
   letter-spacing: -0.01em;
+  color: var(--muted);
+  padding-left: var(--space-3);
+  border-left: 1px solid var(--line-strong);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.site-nav {
+  display: flex;
+  align-items: center;
+  gap: var(--space-1);
+}
+.site-nav a {
+  display: inline-flex;
+  align-items: center;
+  min-height: 40px;
+  padding: 0 var(--space-3);
+  border-radius: var(--radius-pill);
+  color: var(--muted);
+  font-weight: 600;
+  font-size: 14px;
+  text-decoration: none;
+  white-space: nowrap;
+  transition: color var(--dur-fast) ease, background var(--dur-fast) ease;
+}
+.site-nav a:hover,
+.site-nav a[aria-current="page"] {
+  color: var(--text);
+  background: rgba(255, 255, 255, 0.06);
+}
+.site-nav .site-nav__cta {
+  color: var(--text);
+  border: 1px solid var(--line-strong);
+  margin-left: var(--space-2);
+}
+.site-nav select.input {
+  min-height: 40px;
+  width: auto;
+  max-width: 260px;
+}
+.menu-btn {
+  display: none;
+  align-items: center;
+  gap: var(--space-2);
+  min-height: var(--tap);
+  padding: 0 var(--space-3);
+  border-radius: var(--radius-sm);
+  border: 1px solid var(--line-strong);
+  background: transparent;
+  color: var(--text);
+  font-weight: 600;
+  cursor: pointer;
+}
+.menu-btn__icon,
+.menu-btn__icon::before,
+.menu-btn__icon::after {
+  display: block;
+  width: 16px;
+  height: 2px;
+  border-radius: 2px;
+  background: currentColor;
+  transition: transform var(--dur) var(--ease-out), opacity var(--dur-fast) ease;
+}
+.menu-btn__icon {
+  position: relative;
+}
+.menu-btn__icon::before,
+.menu-btn__icon::after {
+  content: "";
+  position: absolute;
+  left: 0;
+}
+.menu-btn__icon::before {
+  top: -5px;
+}
+.menu-btn__icon::after {
+  top: 5px;
+}
+.menu-btn[aria-expanded="true"] .menu-btn__icon {
+  background: transparent;
+}
+.menu-btn[aria-expanded="true"] .menu-btn__icon::before {
+  transform: translateY(5px) rotate(45deg);
+}
+.menu-btn[aria-expanded="true"] .menu-btn__icon::after {
+  transform: translateY(-5px) rotate(-45deg);
+}
+
+@media (max-width: 720px) {
+  .brand img {
+    height: 22px;
+  }
+  .menu-btn {
+    display: inline-flex;
+  }
+  .site-nav {
+    position: absolute;
+    top: 100%;
+    left: 0;
+    right: 0;
+    flex-direction: column;
+    align-items: stretch;
+    gap: var(--space-1);
+    padding: var(--space-3) var(--space-4) var(--space-4);
+    background: var(--bg-2);
+    border-bottom: 1px solid var(--line);
+    box-shadow: var(--shadow-lg);
+    transform-origin: top;
+    transition: transform var(--dur) var(--ease-out), opacity var(--dur) ease, visibility var(--dur);
+  }
+  /* A backdrop-filter on the header makes Chrome composite the open panel
+     with the page underneath, so the page showed through it. Drop the blur
+     while the menu is open. */
+  .site-head:has(.site-nav.is-open) {
+    background: var(--bg-2);
+    backdrop-filter: none;
+    -webkit-backdrop-filter: none;
+  }
+  .site-nav:not(.is-open) {
+    opacity: 0;
+    visibility: hidden;
+    transform: translateY(-8px);
+    pointer-events: none;
+  }
+  .site-nav a {
+    min-height: var(--tap);
+    font-size: 16px;
+  }
+  .site-nav .site-nav__cta {
+    margin: var(--space-2) 0 0;
+    justify-content: center;
+  }
+  .site-nav select.input {
+    max-width: none;
+    width: 100%;
+  }
+}
+@media (max-width: 400px) {
+  .brand__title {
+    display: none;
+  }
 }
 
 /* ---------------------------------------------------------------- fixture */
@@ -421,4 +592,139 @@ tr.is-q td {
     flex-direction: column;
     align-items: flex-start;
   }
+}
+
+/* ------------------------------------------------------------- page intro */
+
+/* A plain page heading, for pages that have no tournament crest to sit beside. */
+.page-intro {
+  padding: var(--space-6) 0 var(--space-2);
+}
+.page-intro__title {
+  font-size: clamp(34px, 7vw, 56px);
+  line-height: 1.02;
+  letter-spacing: -0.035em;
+}
+.page-intro__sub {
+  margin: var(--space-2) 0 0;
+  color: var(--muted);
+  font-size: 17px;
+  max-width: 52ch;
+}
+
+/* ----------------------------------------------------------- definitions */
+
+.deflist {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  gap: var(--space-1) var(--space-5);
+  margin: 0;
+}
+.deflist dd {
+  margin: 0 0 var(--space-3);
+  font-weight: 600;
+}
+@media (min-width: 620px) {
+  .deflist {
+    grid-template-columns: max-content minmax(0, 1fr);
+  }
+  .deflist dd {
+    margin: 0;
+  }
+  .deflist dt {
+    padding-top: 3px;
+  }
+}
+
+/* ---------------------------------------------------------- points ledger */
+
+.tbl--ledger td:first-child {
+  white-space: normal;
+  min-width: 140px;
+}
+.tbl--ledger th:nth-child(2),
+.tbl--ledger td:nth-child(2) {
+  text-align: right;
+}
+.ledger-name {
+  display: block;
+  font-weight: 600;
+}
+.ledger-team {
+  display: block;
+  font-size: 12px;
+  color: var(--faint);
+}
+.ledger-pts {
+  font-family: var(--font-display);
+  font-weight: 800;
+  color: var(--mint);
+}
+
+/* ------------------------------------------------------------ admin chrome */
+
+.whoami {
+  font-size: 13px;
+  color: var(--faint);
+  padding: 0 var(--space-2);
+  white-space: nowrap;
+}
+.admin-main {
+  padding-top: var(--space-4);
+  padding-bottom: var(--space-7);
+}
+/* The tournament being worked on, in its own bar under the header rather than
+   squeezed into it. */
+.context-bar {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+  padding: var(--space-2) var(--space-2) var(--space-2) var(--space-4);
+  border-radius: var(--radius);
+  background: var(--surface);
+  border: 1px solid var(--line);
+}
+.context-bar__label {
+  font-size: 12px;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--faint);
+}
+.context-bar .input {
+  flex: 1 1 auto;
+  background: var(--bg-2);
+}
+@media (max-width: 720px) {
+  .whoami {
+    padding: var(--space-2) var(--space-3) 0;
+  }
+}
+
+/* ------------------------------------------------------------ form rows */
+
+/* `.input` is width:100% so a lone field fills its card. Inside a row of
+   controls that same width made every field wrap onto its own line, which is
+   why the admin forms were a tall stack of unlabelled boxes. In a row they now
+   share the line and wrap only when the screen is genuinely narrow. */
+.row > .input,
+.staff-row > .input {
+  width: auto;
+  flex: 1 1 180px;
+  min-width: 0;
+}
+.row > select.input:not(.grow) {
+  flex: 0 1 160px;
+}
+.row > .input--score {
+  flex: 0 0 110px;
+}
+.row > .btn {
+  flex: 0 0 auto;
+}
+
+#adminBody {
+  display: grid;
+  gap: var(--gap);
+  grid-template-columns: minmax(0, 1fr);
 }

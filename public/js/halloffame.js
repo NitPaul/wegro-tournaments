@@ -6,11 +6,12 @@
  */
 
 import * as D from "/shared/domain/index.js";
-import { $, setHTML, show } from "./ui.js";
+import { $, setHTML, show, wireSiteHeader } from "./ui.js";
 import { archive } from "./api.js";
 
 const e = D.escapeHtml;
 
+wireSiteHeader();
 load();
 
 async function load() {
@@ -95,7 +96,7 @@ function entryNode(x) {
       <p class="faint">
         ${e(when)}
         ${x.summary?.matchesPlayed ? ` · ${x.summary.matchesPlayed} matches` : ""}
-        ${x.summary?.goals ? ` · ${x.summary.goals} goals` : ""}
+        ${x.summary?.goals ? ` · ${D.plural(x.summary.goals, "goal")}` : ""}
         ${x.summary?.teamCount ? ` · ${x.summary.teamCount} teams` : ""}
       </p>
 

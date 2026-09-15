@@ -6,7 +6,10 @@
     <title>WeGro Tournaments</title>
     <meta name="description" content="Live scores, standings, squads and stats." />
 
-    <link rel="icon" href="assets/favicon.png" />
+    <link rel="icon" href="/assets/favicon.svg" type="image/svg+xml" />
+    <link rel="icon" href="/assets/favicon.png" type="image/png" sizes="256x256" />
+    <link rel="apple-touch-icon" href="/assets/apple-touch-icon.png" />
+    <meta name="theme-color" content="#03201c" />
     <link rel="preload" href="assets/fonts/inter-latin.woff2" as="font" type="font/woff2" crossorigin />
     <link rel="preload" href="assets/fonts/manrope-latin.woff2" as="font" type="font/woff2" crossorigin />
     <link rel="stylesheet" href="css/theme.css" />
@@ -15,16 +18,19 @@
   </head>
   <body>
     <header class="site-head">
-      <div class="wrap row spread">
+      <div class="wrap site-head__bar">
         <a class="brand" href="/">
-          <img src="assets/wegro-logo.png" alt="WeGro" height="28" />
+          <img src="/assets/wegro-logo-on-dark.svg" alt="WeGro" width="88" height="24" />
           <span class="brand__title" id="brandTitle">Tournaments</span>
         </a>
-        <div class="row" style="gap: 10px">
+        <button class="menu-btn" type="button" aria-expanded="false" aria-controls="siteNav">
+          <span class="menu-btn__icon" aria-hidden="true"></span><span>Menu</span>
+        </button>
+        <nav class="site-nav" id="siteNav" aria-label="Site">
           <select class="input" id="pickTournament" aria-label="Choose tournament" hidden></select>
-          <a class="btn btn--ghost btn--sm" href="/hall-of-fame.html">Hall of Fame</a>
-          <a class="btn btn--ghost btn--sm" href="/admin.html">Admin</a>
-        </div>
+          <a href="/hall-of-fame">Hall of Fame</a>
+          <a class="site-nav__cta" href="/admin">Admin</a>
+        </nav>
       </div>
     </header>
 
@@ -38,7 +44,7 @@
 
       <div class="empty-state" id="noTournaments" hidden>
         <h2>No tournaments yet</h2>
-        <p class="muted">An organiser needs to create one. <a href="/admin.html">Sign in</a> if that is you.</p>
+        <p class="muted">An organiser needs to create one. <a href="/admin">Sign in</a> if that is you.</p>
       </div>
 
       <div id="content" hidden>
@@ -73,7 +79,7 @@
               <div class="card"><h2 class="card__title">Leaderboard</h2><div id="miniTable"></div></div>
             </div>
           </div>
-          <div class="card" id="venueCard" hidden><h2 class="card__title">Where</h2><dl class="deflist" id="venue"></dl></div>
+          <div class="card" id="venueCard" hidden><h2 class="card__title">Venue &amp; dates</h2><dl class="deflist" id="venue"></dl></div>
         </section>
 
         <section class="panel" id="panel-fixtures" role="tabpanel" aria-labelledby="tab-fixtures" hidden>
@@ -118,7 +124,7 @@
       <div class="wrap spread">
         <span class="faint">Updated <span id="updated">—</span></span>
         <span class="foot-links">
-          <a class="faint" href="/hall-of-fame.html">Hall of Fame</a>
+          <a class="faint" href="/hall-of-fame">Hall of Fame</a>
           <span class="faint">
             Developed by
             <a href="https://github.com/NitPaul" target="_blank" rel="noopener noreferrer" class="credit">NitPaul</a>

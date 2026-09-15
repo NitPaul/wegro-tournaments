@@ -7,7 +7,7 @@
  */
 
 import * as D from "/shared/domain/index.js";
-import { $, setHTML, show, rememberTab, wireTabs } from "./ui.js";
+import { $, setHTML, show, rememberTab, wireScrollFade, wireSiteHeader, wireTabs } from "./ui.js";
 import { serverNow, syncClock, tournaments, watchTournament } from "./api.js";
 
 const e = D.escapeHtml;
@@ -21,6 +21,7 @@ let lastUpdate = null;
 init();
 
 async function init() {
+  wireSiteHeader();
   await syncClock();
 
   let list;
@@ -61,6 +62,7 @@ async function init() {
   let saveTab = () => {};
   const selectTab = wireTabs($("#tabs"), { onChange: (n) => saveTab(n) });
   saveTab = rememberTab("wgt:tab", selectTab);
+  for (const el of document.querySelectorAll(".table-scroll")) wireScrollFade(el);
 
   // Only the clock digits and the "updated" stamp tick — never a full repaint.
   setInterval(tick, 1000);
@@ -357,16 +359,16 @@ function paintStats() {
     ].join(""),
   );
 
-  const leaderboard = (rows, unit) =>
+  const leaderboard = (rows, one) =>
     rows.length
       ? `<ol class="stat-list">${rows
           .slice(0, 10)
-          .map((r) => `<li><b>${e(r.player.name)}</b> <span class="faint">${e(r.team?.name ?? "")}</span><span class="num">${r.value} ${e(unit)}</span></li>`)
+          .map((r) => `<li><b>${e(r.player.name)}</b> <span class="faint">${e(r.team?.name ?? "")}</span><span class="num">${e(D.plural(r.value, one))}</span></li>`)
           .join("")}</ol>`
       : `<p class="faint">Nothing logged yet.</p>`;
 
-  setHTML($("#scorers"), leaderboard(D.topScorers(data), "goals"));
-  setHTML($("#assists"), leaderboard(D.topAssists(data), "assists"));
+  setHTML($("#scorers"), leaderboard(D.topScorers(data), "goal"));
+  setHTML($("#assists"), leaderboard(D.topAssists(data), "assist"));
 
   const points = D.getPoints(data);
   setHTML(
@@ -384,15 +386,17 @@ function paintStats() {
   setHTML(
     $("#pointsTable"),
     ledger.length
-      ? `<table class="tbl">
-          <thead><tr><th>Player</th><th>Team</th>${cols.map(([, l]) => `<th class="num">${l}</th>`).join("")}<th class="num">Pts</th></tr></thead>
+      ? `<table class="tbl tbl--ledger">
+          <thead><tr><th>Player</th><th class="num">Pts</th>${cols.map(([, l]) => `<th class="num">${l}</th>`).join("")}</tr></thead>
           <tbody>${ledger
             .map(
               (r) => `<tr>
-                <td>${e(r.player.name)}${r.player.kind === "captain" ? ' <span class="pill pill--gold">CAP</span>' : ""}${r.player.kind === "guest" ? ' <span class="pill">Guest</span>' : ""}</td>
-                <td>${e(r.team?.name ?? "—")}</td>
+                <td>
+                  <span class="ledger-name">${e(r.player.name)}${r.player.kind === "captain" ? ' <span class="flag-special">CAP</span>' : ""}${r.player.kind === "guest" ? ' <span class="flag-special">Guest</span>' : ""}</span>
+                  <span class="ledger-team">${e(r.team?.name ?? "No team")}</span>
+                </td>
+                <td class="num ledger-pts">${r.points}</td>
                 ${cols.map(([k]) => `<td class="num">${r[k] || ""}</td>`).join("")}
-                <td class="num"><b>${r.points}</b></td>
               </tr>`,
             )
             .join("")}</tbody>

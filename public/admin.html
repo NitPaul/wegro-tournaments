@@ -6,7 +6,10 @@
     <meta name="robots" content="noindex,nofollow" />
     <title>Admin — WeGro Tournaments</title>
 
-    <link rel="icon" href="assets/favicon.png" />
+    <link rel="icon" href="/assets/favicon.svg" type="image/svg+xml" />
+    <link rel="icon" href="/assets/favicon.png" type="image/png" sizes="256x256" />
+    <link rel="apple-touch-icon" href="/assets/apple-touch-icon.png" />
+    <meta name="theme-color" content="#03201c" />
     <link rel="stylesheet" href="css/theme.css" />
     <link rel="stylesheet" href="css/public.css" />
     <link rel="stylesheet" href="css/admin.css" />
@@ -57,18 +60,27 @@
     <!-- ----------------------------------------------------------- console -->
     <section id="adminView" hidden>
       <header class="site-head">
-        <div class="wrap row spread">
-          <a class="brand" href="/"><img src="assets/wegro-logo.png" alt="WeGro" height="26" /><span class="brand__title">Admin</span></a>
-          <div class="row" style="gap: 10px">
-            <select class="input" id="pickTournament" aria-label="Choose tournament"></select>
-            <span class="faint" id="whoami"></span>
-            <a class="btn btn--ghost btn--sm" href="/" target="_blank" rel="noopener">View site ↗</a>
-            <button class="btn btn--ghost btn--sm" id="signOut" type="button">Sign out</button>
-          </div>
+        <div class="wrap site-head__bar">
+          <a class="brand" href="/">
+            <img src="/assets/wegro-logo-on-dark.svg" alt="WeGro" width="88" height="24" />
+            <span class="brand__title">Admin</span>
+          </a>
+          <button class="menu-btn" type="button" aria-expanded="false" aria-controls="siteNav">
+            <span class="menu-btn__icon" aria-hidden="true"></span><span>Menu</span>
+          </button>
+          <nav class="site-nav" id="siteNav" aria-label="Account">
+            <span class="whoami" id="whoami"></span>
+            <a href="/" target="_blank" rel="noopener">View site ↗</a>
+            <button class="btn btn--ghost btn--sm site-nav__cta" id="signOut" type="button">Sign out</button>
+          </nav>
         </div>
       </header>
 
-      <main class="wrap stack">
+      <main class="wrap stack admin-main">
+        <div class="context-bar">
+          <label class="context-bar__label" for="pickTournament">Tournament</label>
+          <select class="input" id="pickTournament"></select>
+        </div>
         <div class="role-note" id="roleNote" hidden></div>
 
         <div class="empty-state" id="noTournaments" hidden>
