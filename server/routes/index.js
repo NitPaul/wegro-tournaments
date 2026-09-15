@@ -10,26 +10,33 @@
 
 import express from "express";
 
-import { env } from "../env.js";
 import { archiveRoutes } from "./archive.js";
 import { authRoutes } from "./auth.js";
+import { peopleRoutes } from "./people.js";
 import { streamRoutes } from "./stream.js";
 import { tournamentRoutes } from "./tournaments.js";
 import { transferRoutes } from "./transfer.js";
 import { userRoutes } from "./users.js";
 import { pruneExpiredSessions } from "../auth/session.js";
+import { siteTotals } from "../roster.js";
 import { streamStats } from "../stream/sse.js";
 
 export function mountRoutes(app) {
   const api = express.Router();
 
   api.get("/health", (req, res) => {
-    res.json({ ok: true, streams: streamStats(), registration: env.allowRegistration });
+    res.json({ ok: true, streams: streamStats() });
+  });
+
+  // The landing page's headline numbers. Cached with the roster, so cheap.
+  api.get("/site", (req, res) => {
+    res.json({ totals: siteTotals() });
   });
 
   api.use("/auth", authRoutes);
   api.use("/users", userRoutes);
   api.use("/tournaments", tournamentRoutes);
+  api.use("/people", peopleRoutes);
   api.use("/archive", archiveRoutes);
   api.use("/import", transferRoutes);
   api.use("/stream", streamRoutes);

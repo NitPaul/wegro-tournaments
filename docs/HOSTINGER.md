@@ -198,6 +198,13 @@ docker compose start app
 > system is live and people are using it, never copy a file in this way — use
 > the restore procedure in `tools/restore.js` instead.
 
+### Player photos
+
+Photos are not in the repository and not in the zip. Once the site is up, sign in
+as the super admin and go to **Players → Add from photos**, then choose the
+whole folder of headshots. Each is shrunk in the browser and uploaded; it takes
+a few seconds for forty.
+
 ## 7. Check it worked
 
 ```bash
@@ -212,7 +219,8 @@ Then in a browser:
   League 2026
 - `https://tournaments.wegro.global/hall-of-fame` — SHOMOGRO beat LEGACY 2–0
 - `https://tournaments.wegro.global/admin` — sign in with the
-  `SUPER_ADMIN_EMAIL` and `SUPER_ADMIN_PASSWORD` from the `.env`
+  `SUPER_ADMIN_USERNAME` (or the email, for an account created before User
+  IDs) and `SUPER_ADMIN_PASSWORD` from the `.env`
 
 ## 8. Close up
 

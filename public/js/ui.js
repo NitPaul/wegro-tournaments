@@ -53,10 +53,65 @@ export function wireTabs(tabsEl, { onChange } = {}) {
   const initial = tabs.find((t) => t.getAttribute("aria-selected") === "true") || tabs[0];
   if (initial) select(initial);
 
+  wireScrollFade(tabsEl);
+
   return (name) => {
     const t = tabs.find((x) => x.id === `tab-${name}`);
     if (t && !t.hidden) select(t);
   };
+}
+
+/**
+ * Fade whichever edge of a horizontal scroller still has content beyond it, so
+ * a tab cut in half by the screen edge reads as "scroll for more" rather than
+ * as a broken layout.
+ */
+export function wireScrollFade(el) {
+  if (!el) return;
+  const update = () => {
+    const max = el.scrollWidth - el.clientWidth;
+    el.classList.toggle("fade-left", max > 1 && el.scrollLeft > 2);
+    el.classList.toggle("fade-right", max > 1 && el.scrollLeft < max - 2);
+  };
+  el.addEventListener("scroll", update, { passive: true });
+  new ResizeObserver(update).observe(el);
+  update();
+}
+
+/**
+ * The site header's Menu button on narrow screens. Closes on Escape, on a
+ * click outside, and when a link inside is followed.
+ */
+export function wireSiteHeader() {
+  const btn = $(".menu-btn");
+  const nav = $(".site-nav");
+  if (!btn || !nav) return;
+
+  const setOpen = (open) => {
+    btn.setAttribute("aria-expanded", String(open));
+    nav.classList.toggle("is-open", open);
+  };
+
+  btn.addEventListener("click", () => setOpen(btn.getAttribute("aria-expanded") !== "true"));
+  nav.addEventListener("click", (e) => {
+    if (e.target.closest("a")) setOpen(false);
+  });
+  document.addEventListener("keydown", (e) => {
+    if (e.key === "Escape" && btn.getAttribute("aria-expanded") === "true") {
+      setOpen(false);
+      btn.focus();
+    }
+  });
+  document.addEventListener("click", (e) => {
+    if (!e.target.closest(".site-head")) setOpen(false);
+  });
+
+  // Mark the current page for screen readers and for the highlight style.
+  const here = location.pathname.replace(/\.html$/, "").replace(/\/$/, "") || "/";
+  for (const a of nav.querySelectorAll("a[href^='/']")) {
+    const href = a.getAttribute("href").replace(/\.html$/, "").replace(/\/$/, "") || "/";
+    if (href === here) a.setAttribute("aria-current", "page");
+  }
 }
 
 /** Bottom-centre toast. `kind` of "err" turns it red. */

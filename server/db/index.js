@@ -33,20 +33,27 @@ db.exec("PRAGMA foreign_keys = ON");
 db.exec("PRAGMA busy_timeout = 5000");
 db.exec("PRAGMA synchronous = NORMAL");
 
-/** Apply the schema. Every statement is IF NOT EXISTS, so this is safe on every boot. */
-export function applySchema() {
+/**
+ * Apply the schema, then any migrations. Every schema statement is IF NOT
+ * EXISTS, so this is safe on every boot. `migrate: false` stops at the base
+ * schema — only the migration tests want that, to seed data in the old shape.
+ */
+export function applySchema({ migrate = true } = {}) {
   const sql = fs.readFileSync(path.join(here, "schema.sql"), "utf8");
   db.exec(sql);
-  applyMigrations();
+  if (migrate) applyMigrations();
 }
 
 /**
  * Numbered migrations for changes the base schema cannot express idempotently
- * (dropping a column, backfilling data). Files are `server/db/migrations/007-thing.sql`
+ * (rebuilding a table, backfilling data). Files are `server/db/migrations/007-thing.sql`
  * and run once, in order, tracked by SQLite's own user_version counter.
+ *
+ * `schema.sql` is the starting point and is not edited for existing tables —
+ * every change to one of those lives in a migration, so a fresh database and a
+ * five-season-old one arrive at exactly the same shape.
  */
-function applyMigrations() {
-  const dir = path.join(here, "migrations");
+export function applyMigrations({ dir = path.join(here, "migrations"), log = console.log } = {}) {
   if (!fs.existsSync(dir)) return;
 
   const current = db.prepare("PRAGMA user_version").get().user_version ?? 0;
@@ -59,16 +66,40 @@ function applyMigrations() {
 
   for (const m of pending) {
     const sql = fs.readFileSync(path.join(dir, m.file), "utf8");
+
+    // A migration that rebuilds a table must run with foreign keys off: with
+    // them on, dropping the old table cascade-deletes every row that points at
+    // it. It says so on its first line. The pragma cannot be changed inside a
+    // transaction, so it is set before BEGIN and restored afterwards whatever
+    // happens.
+    const foreignKeysOff = /^\s*--\s*foreign_keys:\s*off\b/i.test(sql);
+    if (foreignKeysOff) db.exec("PRAGMA foreign_keys = OFF");
+
+    // Broken references that already existed are not this migration's fault
+    // and must not stop the server starting. Only new ones count.
+    const brokenBefore = foreignKeysOff ? db.prepare("PRAGMA foreign_key_check").all().length : 0;
+
     // Each migration is one transaction: it lands whole or not at all.
     db.exec("BEGIN");
     try {
       db.exec(sql);
+      if (foreignKeysOff) {
+        const broken = db.prepare("PRAGMA foreign_key_check").all();
+        if (broken.length > brokenBefore) {
+          const first = broken[broken.length - 1];
+          throw new Error(
+            `it would leave ${broken.length - brokenBefore} broken reference(s), for example ${first.table} → ${first.parent}`,
+          );
+        }
+      }
       db.exec(`PRAGMA user_version = ${m.version}`);
       db.exec("COMMIT");
-      console.log(`[db] applied migration ${m.file}`);
+      log(`[db] applied migration ${m.file}`);
     } catch (err) {
       db.exec("ROLLBACK");
-      throw new Error(`Migration ${m.file} failed: ${err.message}`);
+      throw new Error(`Migration ${m.file} failed and nothing was changed: ${err.message}`);
+    } finally {
+      if (foreignKeysOff) db.exec("PRAGMA foreign_keys = ON");
     }
   }
 }

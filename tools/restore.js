@@ -14,14 +14,24 @@
  *     sh -c 'cp /b/wegro-<timestamp>.sqlite /data/wegro.sqlite'
  *   docker compose up -d
  *
- * Use this JSON path when the backup came from a different version, or when you
- * want to inspect or edit the data on the way in.
+ * and copy the photos folder from the same backup back into the volume:
+ *
+ *   docker run --rm -v wegro-data:/data -v "$PWD/backups:/b" alpine \
+ *     sh -c 'mkdir -p /data/photos && cp /b/wegro-<timestamp>-photos/* /data/photos/'
+ *
+ * Use this JSON path when you want to inspect or edit the data on the way in.
+ * It puts back the photos folder that sits beside the .json, if there is one.
+ * The .json must come from this version of the software: an older one is
+ * missing columns this version requires.
  */
 
 import fs from "node:fs";
 import process from "node:process";
 
+import path from "node:path";
+
 import { applySchema, closeDatabase, db, transaction } from "../server/db/index.js";
+import { PHOTO_DIR } from "../server/photos.js";
 
 // Children before parents on delete, parents before children on insert.
 const ORDER = [
@@ -29,6 +39,7 @@ const ORDER = [
   "tournaments",
   "tournament_staff",
   "teams",
+  "people",
   "players",
   "matches",
   "events",
@@ -91,6 +102,17 @@ export function runRestore(file, { force = false } = {}) {
       );
     }
   });
+
+  // Photos sit in a folder beside the .json: wegro-<timestamp>-photos/.
+  const photosFrom = file.replace(/\.json$/i, "-photos");
+  counts.photos = 0;
+  if (fs.existsSync(photosFrom)) {
+    fs.mkdirSync(PHOTO_DIR, { recursive: true });
+    for (const name of fs.readdirSync(photosFrom)) {
+      fs.copyFileSync(path.join(photosFrom, name), path.join(PHOTO_DIR, name));
+      counts.photos++;
+    }
+  }
 
   return counts;
 }

@@ -6,26 +6,28 @@
     <meta name="robots" content="noindex,nofollow" />
     <title>Admin — WeGro Tournaments</title>
 
-    <link rel="icon" href="assets/favicon.png" />
-    <link rel="stylesheet" href="css/theme.css" />
-    <link rel="stylesheet" href="css/public.css" />
-    <link rel="stylesheet" href="css/admin.css" />
-    <link rel="stylesheet" href="css/app.css" />
+    <link rel="icon" href="/assets/favicon.svg" type="image/svg+xml" />
+    <link rel="icon" href="/assets/favicon.png" type="image/png" sizes="256x256" />
+    <link rel="apple-touch-icon" href="/assets/apple-touch-icon.png" />
+    <meta name="theme-color" content="#03201c" />
+    <link rel="stylesheet" href="/css/theme.css" />
+    <link rel="stylesheet" href="/css/public.css" />
+    <link rel="stylesheet" href="/css/admin.css" />
+    <link rel="stylesheet" href="/css/app.css" />
   </head>
   <body>
     <!-- ------------------------------------------------------- signed out -->
-    <section class="wrap stack" id="loginView" hidden>
-      <div class="card" style="max-width: 460px; margin: 8vh auto">
-        <h1 class="card__title" id="authTitle">Sign in</h1>
+    <section class="login-view" id="loginView" hidden>
+      <div class="card login-card">
+        <img class="login-logo" src="/assets/wegro-logo-on-dark.svg" alt="WeGro" width="132" height="36" />
+        <h1 class="login-title">Sign in</h1>
+        <p class="faint login-note">Use the User ID and password you were given.</p>
 
         <form class="stack" id="loginForm">
-          <label class="field" id="nameField" hidden>
-            <span>Your name</span>
-            <input class="input" id="name" type="text" autocomplete="name" maxlength="80" />
-          </label>
           <label class="field">
-            <span>Email</span>
-            <input class="input" id="email" type="email" autocomplete="username" required />
+            <span>User ID</span>
+            <input class="input" id="login" type="text" autocomplete="username" autocapitalize="none"
+              spellcheck="false" required />
           </label>
           <label class="field">
             <span>Password</span>
@@ -34,42 +36,43 @@
           <button class="btn btn--primary btn--block" id="submitBtn" type="submit">Sign in</button>
         </form>
 
-        <p class="faint" style="margin-top: 14px">
-          <span id="switchPrompt">New here?</span>
-          <button class="btn btn--ghost btn--sm" id="switchMode" type="button">Create an account</button>
-        </p>
-      </div>
-    </section>
-
-    <!-- ------------------------------------------------- waiting approval -->
-    <section class="wrap stack" id="pendingView" hidden>
-      <div class="card pending-card" style="max-width: 520px; margin: 8vh auto">
-        <h1 class="card__title">Waiting for approval</h1>
-        <p>
-          Your account exists, but an organiser has to add you to a tournament before you can change
-          anything. They will see you in their list automatically — there is nothing else for you to send.
-        </p>
-        <p class="faint" id="pendingWho"></p>
-        <button class="btn btn--ghost" id="pendingSignOut" type="button">Sign out</button>
+        <p class="faint">Forgotten your password? The super admin can set a new one.</p>
+        <a class="faint" href="/">← Back to the site</a>
       </div>
     </section>
 
     <!-- ----------------------------------------------------------- console -->
     <section id="adminView" hidden>
       <header class="site-head">
-        <div class="wrap row spread">
-          <a class="brand" href="/"><img src="assets/wegro-logo.png" alt="WeGro" height="26" /><span class="brand__title">Admin</span></a>
-          <div class="row" style="gap: 10px">
-            <select class="input" id="pickTournament" aria-label="Choose tournament"></select>
-            <span class="faint" id="whoami"></span>
-            <a class="btn btn--ghost btn--sm" href="/" target="_blank" rel="noopener">View site ↗</a>
-            <button class="btn btn--ghost btn--sm" id="signOut" type="button">Sign out</button>
-          </div>
+        <div class="wrap site-head__bar">
+          <a class="brand" href="/">
+            <img src="/assets/wegro-logo-on-dark.svg" alt="WeGro" width="88" height="24" />
+            <span class="brand__title">Admin</span>
+          </a>
+          <button class="menu-btn" type="button" aria-expanded="false" aria-controls="siteNav">
+            <span class="menu-btn__icon" aria-hidden="true"></span><span>Menu</span>
+          </button>
+          <nav class="site-nav" id="siteNav" aria-label="Account">
+            <span class="whoami" id="whoami"></span>
+            <a href="/" target="_blank" rel="noopener">View site ↗</a>
+            <button class="btn btn--ghost btn--sm site-nav__cta" id="signOut" type="button">Sign out</button>
+          </nav>
         </div>
       </header>
 
-      <main class="wrap stack">
+      <main class="wrap stack admin-main">
+        <!-- Which tournament the tabs below act on. A super admin can switch; an
+             admin or referee account has exactly one, so it is shown, not chosen. -->
+        <div class="context-bar" id="contextBar" hidden>
+          <label class="context-bar__label" for="pickTournament">Tournament</label>
+          <select class="input" id="pickTournament" hidden></select>
+          <b class="context-bar__name" id="contextName" hidden></b>
+          <span class="code-chip" id="contextCode" title="This tournament's permanent code"></span>
+        </div>
         <div class="role-note" id="roleNote" hidden></div>
+        <div class="readonly-note" id="readOnlyNote" hidden>
+          This tournament is finished, so it is read-only now. The super admin can reopen it if a result needs correcting.
+        </div>
 
         <div class="empty-state" id="noTournaments" hidden>
           <h2>No tournaments yet</h2>
@@ -78,33 +81,153 @@
 
         <div id="adminBody" hidden>
           <div class="tabs" id="tabs" role="tablist" aria-label="Admin sections">
+            <button class="tab" id="tab-tournaments" role="tab" aria-controls="panel-tournaments" aria-selected="false" type="button" hidden>Tournaments</button>
+            <button class="tab" id="tab-accounts" role="tab" aria-controls="panel-accounts" aria-selected="false" type="button" hidden>Accounts</button>
+            <button class="tab" id="tab-players" role="tab" aria-controls="panel-players" aria-selected="false" type="button" hidden>Players</button>
             <button class="tab" id="tab-setup" role="tab" aria-controls="panel-setup" aria-selected="true" type="button">Setup</button>
             <button class="tab" id="tab-auction" role="tab" aria-controls="panel-auction" aria-selected="false" type="button">Auction</button>
             <button class="tab" id="tab-live" role="tab" aria-controls="panel-live" aria-selected="false" type="button">▶ Match day</button>
             <button class="tab" id="tab-settings" role="tab" aria-controls="panel-settings" aria-selected="false" type="button">Settings</button>
-            <button class="tab" id="tab-people" role="tab" aria-controls="panel-people" aria-selected="false" type="button">People</button>
             <button class="tab" id="tab-danger" role="tab" aria-controls="panel-danger" aria-selected="false" type="button">Danger</button>
           </div>
+
+          <!-- Tournaments (super admin) -->
+          <section class="panel" id="panel-tournaments" role="tabpanel" aria-labelledby="tab-tournaments" hidden>
+            <div class="card">
+              <h2 class="card__title">New tournament</h2>
+              <p class="faint">
+                Only the name is needed. Date and venue can stay empty until they are decided — once you
+                publish it, the site shows it as coming soon.
+              </p>
+              <div class="form-grid">
+                <label class="field"><span>Name</span><input class="input" id="newTournamentName" type="text" placeholder="e.g. WeGro Champions League" maxlength="80" /></label>
+                <label class="field"><span>Season</span><input class="input" id="newTournamentSeason" type="text" placeholder="e.g. 2027" maxlength="20" /></label>
+                <label class="field">
+                  <span>Format</span>
+                  <select class="input" id="newTournamentFormat">
+                    <option value="league">League — auction, table, final</option>
+                    <option value="friendly">Friendly — just matches</option>
+                  </select>
+                </label>
+                <label class="field"><span>Start date (optional)</span><input class="input" id="newTournamentDate" type="date" /></label>
+              </div>
+              <div class="card-buttons form-actions">
+                <button class="btn btn--primary" id="createTournament" type="button">Create tournament</button>
+              </div>
+            </div>
+
+            <div class="card">
+              <div class="spread">
+                <h2 class="card__title">All tournaments</h2>
+                <input class="input input--search" id="overviewSearch" type="search" placeholder="Search by code or name" aria-label="Search tournaments" />
+              </div>
+              <p class="faint">
+                Each tournament keeps its code for ever. Its admin can rename it, so look for the code.
+              </p>
+              <div id="overviewList"></div>
+            </div>
+          </section>
+
+          <!-- Accounts (super admin) -->
+          <section class="panel" id="panel-accounts" role="tabpanel" aria-labelledby="tab-accounts" hidden>
+            <div class="card">
+              <h2 class="card__title">New account</h2>
+              <p class="faint">
+                An admin or referee account belongs to one tournament and cannot see any other.
+                For a second tournament, make a second account.
+              </p>
+              <div class="form-grid">
+                <label class="field"><span>Name</span><input class="input" id="newAccountName" type="text" maxlength="80" autocomplete="off" /></label>
+                <label class="field"><span>User ID</span><input class="input" id="newAccountUsername" type="text" maxlength="32" autocomplete="off" autocapitalize="none" spellcheck="false" placeholder="e.g. faquid" /></label>
+                <label class="field">
+                  <span>Password</span>
+                  <span class="input-with-button">
+                    <input class="input" id="newAccountPassword" type="password" autocomplete="new-password" />
+                    <button class="btn btn--ghost" id="generatePassword" type="button">Generate</button>
+                  </span>
+                </label>
+                <label class="field">
+                  <span>Role</span>
+                  <select class="input" id="newAccountRole">
+                    <option value="admin">Tournament admin — squads, auction, match day</option>
+                    <option value="referee">Referee — match day only</option>
+                    <option value="super">Super admin — everything</option>
+                  </select>
+                </label>
+                <label class="field" id="newAccountTournamentField"><span>Tournament</span><select class="input" id="newAccountTournament"></select></label>
+              </div>
+              <div class="card-buttons form-actions">
+                <button class="btn btn--primary" id="createAccount" type="button">Create account</button>
+              </div>
+              <div id="handover"></div>
+            </div>
+            <div class="card">
+              <h2 class="card__title">Accounts</h2>
+              <div id="accountList"></div>
+            </div>
+          </section>
+
+          <!-- Players: the roster every tournament draws from -->
+          <section class="panel" id="panel-players" role="tabpanel" aria-labelledby="tab-players" hidden>
+            <div class="card">
+              <div class="spread">
+                <div>
+                  <h2 class="card__title">Players</h2>
+                  <p class="faint" id="peopleCount"></p>
+                </div>
+                <div class="card-buttons toolbar">
+                  <button class="btn btn--ghost" id="bulkAdd" type="button" hidden>Add from photos</button>
+                  <button class="btn btn--primary" id="addPerson" type="button" hidden>Add player</button>
+                  <input type="file" id="bulkFiles" accept="image/*" multiple hidden />
+                </div>
+              </div>
+              <div class="row toolbar-row">
+                <input class="input" id="peopleSearch" type="search" placeholder="Search by name" aria-label="Search players" />
+                <select class="input" id="peopleFilter" aria-label="Show">
+                  <option value="all">Everyone</option>
+                  <option value="nophoto">No photo yet</option>
+                  <option value="unrated">Not rated yet</option>
+                  <option value="new">Not played yet</option>
+                </select>
+              </div>
+              <div class="pgrid" id="peopleGrid"></div>
+            </div>
+
+            <div class="card" id="linkCard" hidden>
+              <h2 class="card__title">Match players to the roster</h2>
+              <p class="faint">
+                Say which roster person each player in <b id="linkTournament"></b> is. That puts their photo
+                on the scoreboard and adds their goals and saves to their record. The suggestions are
+                only suggestions — check the face.
+              </p>
+              <div id="linkList"></div>
+            </div>
+          </section>
 
           <!-- Setup -->
           <section class="panel" id="panel-setup" role="tabpanel" aria-labelledby="tab-setup">
             <div class="card">
               <h2 class="card__title">Teams &amp; captains</h2>
               <div id="teamList"></div>
-              <div class="row" style="gap: 8px; margin-top: 12px; flex-wrap: wrap">
-                <input class="input grow" id="newTeamName" type="text" placeholder="Team name" maxlength="60" />
-                <input class="input grow" id="newCaptainName" type="text" placeholder="Captain's name" maxlength="40" />
+              <div class="row row--spaced">
+                <input class="input grow" id="newTeamName" type="text" placeholder="Team name" maxlength="60" aria-label="Team name" />
+                <select class="input grow" id="newCaptainPerson" aria-label="Captain from the roster"></select>
+                <input class="input grow" id="newCaptainName" type="text" placeholder="…or type a captain's name" maxlength="40" aria-label="Captain's name" />
                 <button class="btn btn--primary" id="addTeam" type="button">Add team</button>
               </div>
             </div>
 
             <div class="card">
-              <h2 class="card__title">Players</h2>
+              <div class="spread">
+                <h2 class="card__title">Players</h2>
+                <button class="btn btn--primary" id="openRosterPicker" type="button">Add from the roster</button>
+              </div>
               <p class="faint">
-                Auction players are bid on. Guests are free and outside every squad limit. A captain is
-                added with their team.
+                Pick people from the roster to put them in the auction pool — they come with their photo
+                and record. Or type a name below for someone new. Guests are free and outside every squad
+                limit; a captain is added with their team.
               </p>
-              <div class="row" style="gap: 8px; flex-wrap: wrap">
+              <div class="row">
                 <input class="input grow" id="newPlayerName" type="text" placeholder="Player name" maxlength="40" />
                 <select class="input" id="newPlayerPos" aria-label="Position"></select>
                 <select class="input" id="newPlayerKind" aria-label="Kind">
@@ -114,7 +237,7 @@
                 <select class="input" id="newPlayerTeam" aria-label="Team"></select>
                 <button class="btn btn--primary" id="addPlayer" type="button">Add</button>
               </div>
-              <div id="playerList" style="margin-top: 12px"></div>
+              <div class="list-spaced" id="playerList"></div>
             </div>
 
             <div class="card">
@@ -124,24 +247,63 @@
                 <button class="btn btn--primary" id="generateFixtures" type="button">Generate round robin</button>
                 <button class="btn btn--ghost" id="addMatch" type="button">Add one match</button>
               </div>
-              <div id="matchList" style="margin-top: 12px"></div>
+              <div class="list-spaced" id="matchList"></div>
             </div>
           </section>
 
           <!-- Auction -->
           <section class="panel" id="panel-auction" role="tabpanel" aria-labelledby="tab-auction" hidden>
             <div class="card">
-              <h2 class="card__title">Sell a player</h2>
-              <div class="row" style="gap: 8px; flex-wrap: wrap">
-                <select class="input grow" id="sellPlayer" aria-label="Player"></select>
-                <select class="input grow" id="sellTeam" aria-label="Team"></select>
-                <input class="input input--score" id="sellPrice" type="number" min="0" step="1" aria-label="Price" />
-                <button class="btn btn--primary" id="sellBtn" type="button">Sell</button>
+              <div class="spread">
+                <div>
+                  <h2 class="card__title">Auction</h2>
+                  <p class="faint" id="deskProgress"></p>
+                </div>
+                <a class="btn btn--ghost" id="projectorLink" href="#" target="_blank" rel="noopener">Open projector screen ↗</a>
               </div>
-              <p class="faint" id="sellHint"></p>
             </div>
+
+            <div class="desk">
+              <div class="card block">
+                <div class="spread">
+                  <h2 class="card__title">On the block</h2>
+                  <button class="btn btn--sm btn--ghost" id="clearBlock" type="button" hidden>Take off the block</button>
+                </div>
+                <div class="block__player" id="blockPlayer"></div>
+                <div class="block__sell">
+                  <label class="field"><span>Team</span><select class="input" id="sellTeam"></select></label>
+                  <label class="field">
+                    <span>Price (BDT)</span>
+                    <input class="input input--score" id="sellPrice" type="number" min="0" step="1" inputmode="numeric" />
+                  </label>
+                  <div class="bid-steps" aria-label="Raise the price">
+                    <button class="btn btn--sm btn--ghost" type="button" data-bid="1">+1</button>
+                    <button class="btn btn--sm btn--ghost" type="button" data-bid="2">+2</button>
+                    <button class="btn btn--sm btn--ghost" type="button" data-bid="5">+5</button>
+                  </div>
+                  <button class="btn btn--primary btn--block block__go" id="sellBtn" type="button">Sold</button>
+                  <p class="faint" id="sellHint" aria-live="polite"></p>
+                </div>
+              </div>
+
+              <div class="card">
+                <h2 class="card__title">Pool</h2>
+                <div class="row desk-tools">
+                  <input class="input" id="deskSearch" type="search" placeholder="Find a player" aria-label="Find a player" />
+                  <div class="seg" id="deskPos" role="group" aria-label="Position">
+                    <button type="button" data-pos="" aria-pressed="true">All</button>
+                    <button type="button" data-pos="GK" aria-pressed="false">GK</button>
+                    <button type="button" data-pos="DEF" aria-pressed="false">DEF</button>
+                    <button type="button" data-pos="MID" aria-pressed="false">MID</button>
+                    <button type="button" data-pos="FWD" aria-pressed="false">FWD</button>
+                  </div>
+                </div>
+                <div class="pool-grid" id="poolGrid"></div>
+              </div>
+            </div>
+
             <div class="card"><h2 class="card__title">Budgets</h2><div id="captainGrid"></div></div>
-            <div class="card"><h2 class="card__title">Pool</h2><div id="poolList"></div></div>
+            <div class="card"><h2 class="card__title">Sold</h2><div id="poolList"></div></div>
           </section>
 
           <!-- Match day -->
@@ -156,26 +318,18 @@
 
           <!-- Settings -->
           <section class="panel" id="panel-settings" role="tabpanel" aria-labelledby="tab-settings" hidden>
-            <div class="card"><h2 class="card__title">Tournament</h2><div id="metaGrid"></div></div>
-            <div class="card"><h2 class="card__title">Auction rules</h2><div id="auctionSettings"></div></div>
-            <div class="card"><h2 class="card__title">Award points</h2><div id="pointsGrid"></div></div>
-            <div class="card"><h2 class="card__title">Medal overrides</h2><div id="medalGrid"></div></div>
-          </section>
-
-          <!-- People -->
-          <section class="panel" id="panel-people" role="tabpanel" aria-labelledby="tab-people" hidden>
             <div class="card">
-              <h2 class="card__title">Staff on this tournament</h2>
-              <p class="faint">
-                A tournament admin runs squads, the auction and settings. A referee runs match day.
-                Both are checked on the server, so this is a real permission and not a hidden screen.
-              </p>
-              <div id="staffList"></div>
+              <h2 class="card__title">Tournament details</h2>
+              <p class="faint">You can rename the tournament. Its code <b id="detailsCode"></b> never changes.</p>
+              <div class="form-grid" id="detailsGrid"></div>
             </div>
+            <div class="card"><h2 class="card__title">Venue &amp; dates</h2><p class="faint">Leave anything not yet decided empty — the site shows it as “to be announced”.</p><div class="form-grid" id="metaGrid"></div></div>
+            <div class="card"><h2 class="card__title">Auction rules</h2><div class="form-grid" id="auctionSettings"></div></div>
+            <div class="card"><h2 class="card__title">Award points</h2><div class="form-grid form-grid--tight" id="pointsGrid"></div></div>
             <div class="card">
-              <h2 class="card__title">Everyone</h2>
-              <p class="faint">Assigning somebody to a tournament approves their account at the same time.</p>
-              <div id="peopleList"></div>
+              <h2 class="card__title">Medals</h2>
+              <p class="faint">Leave a medal on “computed” to give it to the top of the table, or name the winner the referee declared.</p>
+              <div class="form-grid" id="medalGrid"></div>
             </div>
           </section>
 
@@ -184,14 +338,14 @@
             <div class="card">
               <h2 class="card__title">Who can see this tournament</h2>
               <p class="faint">
-                A draft is visible only to its staff. Active is the one the public site opens by default.
-                Finished puts it in the Hall of Fame.
+                Hidden means only its staff can see it. Published puts it on the public site — as
+                “coming soon” until it starts. Finished locks it and adds it to the Hall of Fame.
               </p>
-              <div class="row" style="gap: 8px; flex-wrap: wrap">
+              <div class="row">
                 <select class="input grow" id="statusSelect" aria-label="Visibility">
-                  <option value="draft">Draft — hidden from the public</option>
-                  <option value="active">Active — live on the public site</option>
-                  <option value="completed">Finished — in the Hall of Fame</option>
+                  <option value="draft">Hidden — only staff can see it</option>
+                  <option value="active">Published — on the public site</option>
+                  <option value="completed">Finished — locked, in the Hall of Fame</option>
                 </select>
               </div>
             </div>
@@ -203,7 +357,7 @@
                 backup taken <b>after</b> match day, or it will arrive with no results in it.
                 This always creates a new tournament — it never merges into this one.
               </p>
-              <div class="row" style="gap: 8px; flex-wrap: wrap">
+              <div class="row">
                 <input class="input grow" id="importFile" type="file" accept="application/json,.json" aria-label="Backup file" />
                 <select class="input" id="importStatus" aria-label="Import as">
                   <option value="completed">Finished</option>
@@ -246,20 +400,11 @@
           </section>
         </div>
 
-        <div class="card" id="createCard" hidden>
-          <h2 class="card__title">New tournament</h2>
-          <div class="row" style="gap: 8px; flex-wrap: wrap">
-            <input class="input grow" id="newTournamentName" type="text" placeholder="Tournament name" maxlength="80" />
-            <input class="input" id="newTournamentSeason" type="text" placeholder="Season" maxlength="20" style="max-width: 120px" />
-            <select class="input" id="newTournamentFormat" aria-label="Format">
-              <option value="league">League — auction, table, final</option>
-              <option value="friendly">Friendly — just matches</option>
-            </select>
-            <input class="input" id="newTournamentDate" type="date" aria-label="Start date" />
-            <button class="btn btn--primary" id="createTournament" type="button">Create</button>
-          </div>
-        </div>
       </main>
+
+      <dialog class="dialog" id="personDialog" aria-label="Player"></dialog>
+      <dialog class="dialog" id="rosterDialog" aria-label="Add players from the roster"></dialog>
+      <dialog class="dialog" id="bulkDialog" aria-label="Add players from photos"></dialog>
 
       <footer class="site-foot">
         <div class="wrap spread">
@@ -275,6 +420,6 @@
       </footer>
     </section>
 
-    <script type="module" src="js/admin.js"></script>
+    <script type="module" src="/js/admin.js"></script>
   </body>
 </html>

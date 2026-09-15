@@ -93,6 +93,27 @@ Every SQL statement lives in `server/db/repo/`. Nothing above that layer knows
 what a table is. To move to Postgres, reimplement that directory and change the
 connection in `server/db/index.js`. Do not scatter queries into routes.
 
+## People, players and careers
+
+A `player` row belongs to one tournament — the Munna who played for SHOMOGRO in
+2026. A `person` row (`people`) is the human being, kept for good: photo, usual
+position, the super admin's rating. `players.person_id` links the two.
+
+Nothing about a career is stored. `shared/domain/career.js` runs the ordinary
+per-tournament ledger (`playerStats`) over every published tournament and adds
+up the rows that point at the same person, so a career can never disagree with
+the tournaments it came from. `server/roster.js` caches the result in memory and
+drops it on every broadcast. Appearances are not recorded, so `matches` counts
+the finished matches the player's team played in.
+
+`shared/domain/rating.js` turns a career into the "from stats" rating: points
+per match, pulled towards 60 until there are enough matches to believe it.
+
+Photos are files in `DATA_DIR/photos`, served from `/media/photos/` with a
+year-long cache; each upload gets a new random file name, so a changed photo is
+never served stale. The server checks the bytes are really a JPEG, PNG or WebP
+and never builds a path from anything the client sent (`server/photos.js`).
+
 ## Permissions
 
 `server/auth/middleware.js`. `requireTournament(minRole)` loads the tournament,
@@ -130,8 +151,16 @@ Clients hold a connection open, so watch connection count, not request rate.
   login when the cost parameters change.
 - Sessions: random token in an httpOnly cookie; the database stores only its
   SHA-256, so a leaked backup does not hand over live sessions.
-- Registration is open by default but grants nothing — a new account sits at
-  `pending` until a super admin assigns it to a tournament.
+- There is no self-registration. The super admin creates each account with a
+  User ID; an admin or referee account belongs to one tournament, enforced by a
+  unique index on `tournament_staff(user_id)` as well as in the routes.
+- Tournaments carry a permanent `code`. No route accepts it in an update.
+- A finished tournament refuses writes from anyone but the super admin
+  (`requireTournament`, `server/auth/middleware.js`).
+- Schema changes to existing tables live in `server/db/migrations/`. A migration
+  whose first line is `-- foreign_keys: off` runs with foreign keys off (needed
+  to rebuild a table without cascade-deleting its dependents) and is refused if
+  it leaves any new broken reference.
 
 ## Where to be careful
 

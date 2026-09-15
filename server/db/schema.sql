@@ -1,4 +1,13 @@
--- WeGro Tournaments — schema
+-- WeGro Tournaments — base schema
+--
+-- THIS IS VERSION 0. It is applied on every boot (everything is IF NOT EXISTS)
+-- and then server/db/migrations/ runs on top of it. Tables that already exist
+-- are never edited here — change them with a numbered migration, so a new
+-- database and an old one end up identical. What has changed since:
+--
+--   001  users: sign in with a `username`, email optional, no 'pending' state.
+--        tournaments: a permanent `code`. tournament_staff: one tournament per
+--        account. audit_log: `username`.
 --
 -- Design notes worth reading before changing anything here:
 --

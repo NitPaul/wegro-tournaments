@@ -1,0 +1,45 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta name="robots" content="noindex" />
+    <title>Auction — WeGro Tournaments</title>
+    <link rel="icon" href="/assets/favicon.svg" type="image/svg+xml" />
+    <link rel="stylesheet" href="/css/theme.css" />
+    <link rel="stylesheet" href="/css/public.css" />
+    <link rel="stylesheet" href="/css/auction.css" />
+  </head>
+  <body class="stage">
+    <!-- The projector screen. Read-only, no sign-in: it shows whatever the
+         auctioneer's console puts on the block, and celebrates each sale. -->
+    <header class="stage__head">
+      <img src="/assets/wegro-logo-on-dark.svg" alt="WeGro" width="132" height="36" />
+      <div class="stage__title">
+        <span class="stage__eyebrow">Player auction</span>
+        <b id="tournamentName">…</b>
+      </div>
+      <div class="stage__progress">
+        <span id="progressText"></span>
+        <span class="stage__bar"><i id="progressBar"></i></span>
+      </div>
+      <button class="stage__full" id="fullscreen" type="button" title="Full screen">⛶</button>
+    </header>
+
+    <main class="stage__main">
+      <section class="lot" id="lot" aria-live="polite"></section>
+      <aside class="boards" id="boards" aria-label="Team budgets"></aside>
+    </main>
+
+    <footer class="stage__ticker" id="ticker" aria-label="Recent sales"></footer>
+
+    <div class="sold" id="sold" hidden aria-live="assertive"></div>
+
+    <div class="stage__problem" id="problem" hidden>
+      <h1>Cannot show this auction</h1>
+      <p id="problemText"></p>
+    </div>
+
+    <script type="module" src="/js/auction-screen.js"></script>
+  </body>
+</html>

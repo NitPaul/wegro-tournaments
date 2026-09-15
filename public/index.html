@@ -4,121 +4,143 @@
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     <title>WeGro Tournaments</title>
-    <meta name="description" content="Live scores, standings, squads and stats." />
+    <meta name="description" content="Live scores, the player auction and the record of everyone who has played in a WeGro football tournament." />
 
-    <link rel="icon" href="assets/favicon.png" />
-    <link rel="preload" href="assets/fonts/inter-latin.woff2" as="font" type="font/woff2" crossorigin />
-    <link rel="preload" href="assets/fonts/manrope-latin.woff2" as="font" type="font/woff2" crossorigin />
-    <link rel="stylesheet" href="css/theme.css" />
-    <link rel="stylesheet" href="css/public.css" />
-    <link rel="stylesheet" href="css/app.css" />
+    <meta property="og:type" content="website" />
+    <meta property="og:title" content="WeGro Tournaments" />
+    <meta property="og:description" content="Every WeGro match, auction and champion." />
+    <meta property="og:url" content="{{PUBLIC_URL}}/" />
+    <meta property="og:image" content="{{PUBLIC_URL}}/assets/og.png" />
+    <meta property="og:image:width" content="1200" />
+    <meta property="og:image:height" content="630" />
+    <meta name="twitter:card" content="summary_large_image" />
+
+    <link rel="icon" href="/assets/favicon.svg" type="image/svg+xml" />
+    <link rel="icon" href="/assets/favicon.png" type="image/png" sizes="256x256" />
+    <link rel="apple-touch-icon" href="/assets/apple-touch-icon.png" />
+    <meta name="theme-color" content="#03201c" />
+    <link rel="preload" href="/assets/fonts/manrope-latin.woff2" as="font" type="font/woff2" crossorigin />
+    <link rel="stylesheet" href="/css/theme.css" />
+    <link rel="stylesheet" href="/css/public.css" />
+    <link rel="stylesheet" href="/css/app.css" />
+    <link rel="stylesheet" href="/css/players.css" />
+    <link rel="stylesheet" href="/css/landing.css" />
   </head>
-  <body>
+  <body class="landing">
     <header class="site-head">
-      <div class="wrap row spread">
+      <div class="wrap site-head__bar">
         <a class="brand" href="/">
-          <img src="assets/wegro-logo.png" alt="WeGro" height="28" />
-          <span class="brand__title" id="brandTitle">Tournaments</span>
+          <img src="/assets/wegro-logo-on-dark.svg" alt="WeGro" width="88" height="24" />
+          <span class="brand__title">Tournaments</span>
         </a>
-        <div class="row" style="gap: 10px">
-          <select class="input" id="pickTournament" aria-label="Choose tournament" hidden></select>
-          <a class="btn btn--ghost btn--sm" href="/hall-of-fame.html">Hall of Fame</a>
-          <a class="btn btn--ghost btn--sm" href="/admin.html">Admin</a>
-        </div>
+        <button class="menu-btn" type="button" aria-expanded="false" aria-controls="siteNav">
+          <span class="menu-btn__icon" aria-hidden="true"></span><span>Menu</span>
+        </button>
+        <nav class="site-nav" id="siteNav" aria-label="Site">
+          <a href="/">Tournaments</a>
+          <a href="/players">Players</a>
+          <a href="/hall-of-fame">Hall of Fame</a>
+          <a class="site-nav__cta" href="/admin">Admin</a>
+        </nav>
       </div>
     </header>
 
-    <main class="wrap stack" id="page">
-      <div class="empty-state" id="loading"><div class="spinner"></div><p>Loading…</p></div>
-
-      <div class="empty-state" id="offline" hidden>
-        <h2>Cannot reach the scoreboard</h2>
-        <p class="muted" id="offlineWhy">Check your connection and refresh.</p>
-      </div>
-
-      <div class="empty-state" id="noTournaments" hidden>
-        <h2>No tournaments yet</h2>
-        <p class="muted">An organiser needs to create one. <a href="/admin.html">Sign in</a> if that is you.</p>
-      </div>
-
-      <div id="content" hidden>
-        <!-- The crest is the first grid column. .hero is a two-column grid
-             (96px + rest), so the text must live in its own child or the
-             headline gets squeezed into the crest's column. -->
-        <section class="hero">
-          <img class="hero__crest" src="assets/crest.png" alt="" width="639" height="639" />
-          <div class="hero__text">
-            <p class="eyebrow" id="heroEyebrow"></p>
-            <h1 class="hero__title" id="heroTitle"></h1>
-            <p class="hero__sub" id="heroSub"></p>
-            <div class="row" id="heroPills"></div>
-          </div>
-        </section>
-        <div id="banners"></div>
-
-        <div class="tabs" id="tabs" role="tablist" aria-label="Sections">
-          <button class="tab" id="tab-overview" role="tab" aria-controls="panel-overview" aria-selected="true" type="button">Overview</button>
-          <button class="tab" id="tab-fixtures" role="tab" aria-controls="panel-fixtures" aria-selected="false" type="button">Fixtures</button>
-          <button class="tab" id="tab-standings" role="tab" aria-controls="panel-standings" aria-selected="false" type="button">Standings</button>
-          <button class="tab" id="tab-squads" role="tab" aria-controls="panel-squads" aria-selected="false" type="button">Squads</button>
-          <button class="tab" id="tab-stats" role="tab" aria-controls="panel-stats" aria-selected="false" type="button">Stats &amp; Awards</button>
-          <button class="tab" id="tab-discipline" role="tab" aria-controls="panel-discipline" aria-selected="false" type="button">Discipline</button>
-        </div>
-
-        <section class="panel" id="panel-overview" role="tabpanel" aria-labelledby="tab-overview">
-          <div class="cols-2">
-            <div class="card"><h2 class="card__title">Captains</h2><div id="captains"></div></div>
-            <div class="stack">
-              <div class="card"><h2 class="card__title">Next up</h2><div id="nextUp"></div></div>
-              <div class="card"><h2 class="card__title">Leaderboard</h2><div id="miniTable"></div></div>
+    <main>
+      <section class="hero-land">
+        <div class="wrap hero-land__grid">
+          <div class="hero-land__text">
+            <p class="eyebrow">WeGro Technologies · Football</p>
+            <h1 class="hero-land__title">Every match.<br />Every <span>champion.</span></h1>
+            <p class="hero-land__lead">
+              Live scores from the touchline, the player auction, and the record of everyone who has
+              ever pulled on a WeGro shirt — for every tournament we play.
+            </p>
+            <div class="hero-land__cta">
+              <a class="btn btn--primary" href="#tournaments">See tournaments</a>
+              <a class="btn btn--ghost" href="/players">Meet the players</a>
             </div>
           </div>
-          <div class="card" id="venueCard" hidden><h2 class="card__title">Where</h2><dl class="deflist" id="venue"></dl></div>
-        </section>
 
-        <section class="panel" id="panel-fixtures" role="tabpanel" aria-labelledby="tab-fixtures" hidden>
-          <div class="card"><h2 class="card__title">Fixtures &amp; results</h2><div id="fixtures"></div></div>
-        </section>
-
-        <section class="panel" id="panel-standings" role="tabpanel" aria-labelledby="tab-standings" hidden>
-          <div class="card"><h2 class="card__title">Standings</h2><div class="table-scroll" id="table"></div></div>
-        </section>
-
-        <section class="panel" id="panel-squads" role="tabpanel" aria-labelledby="tab-squads" hidden>
-          <div class="card"><h2 class="card__title">Auction</h2><div id="auctionProgress"></div></div>
-          <div id="squads"></div>
-          <div class="card" id="poolCard" hidden><h2 class="card__title">Still unsold</h2><div id="pool"></div></div>
-        </section>
-
-        <section class="panel" id="panel-stats" role="tabpanel" aria-labelledby="tab-stats" hidden>
-          <div class="card"><h2 class="card__title">Awards</h2><div class="awards" id="awards"></div></div>
-          <div class="cols-2">
-            <div class="card"><h2 class="card__title">Top scorers</h2><div id="scorers"></div></div>
-            <div class="card"><h2 class="card__title">Assists</h2><div id="assists"></div></div>
+          <!-- Drawn in by landing.js: a pitch whose lines trace themselves, and a
+               passing move that ends in the net. Purely decorative. -->
+          <div class="hero-land__art" aria-hidden="true">
+            <svg class="pitch" id="pitch" viewBox="0 0 400 260" preserveAspectRatio="xMidYMid meet">
+              <defs>
+                <radialGradient id="glow" cx="50%" cy="50%" r="50%">
+                  <stop offset="0" stop-color="#46dcaa" stop-opacity="0.22" />
+                  <stop offset="1" stop-color="#46dcaa" stop-opacity="0" />
+                </radialGradient>
+              </defs>
+              <rect class="pitch__turf" x="6" y="6" width="388" height="248" rx="10" />
+              <g class="pitch__lines">
+                <rect x="6" y="6" width="388" height="248" rx="10" pathLength="1" />
+                <line x1="200" y1="6" x2="200" y2="254" pathLength="1" />
+                <circle cx="200" cy="130" r="36" pathLength="1" />
+                <rect x="6" y="72" width="54" height="116" pathLength="1" />
+                <rect x="340" y="72" width="54" height="116" pathLength="1" />
+                <rect x="6" y="104" width="20" height="52" pathLength="1" />
+                <rect x="374" y="104" width="20" height="52" pathLength="1" />
+              </g>
+              <circle class="pitch__spot" cx="200" cy="130" r="2.5" />
+              <g id="pitchPlayers"></g>
+              <circle class="pitch__glow" id="goalGlow" cx="392" cy="130" r="40" fill="url(#glow)" />
+              <path class="pitch__trail" id="ballTrail" d="" />
+              <circle class="pitch__ball" id="ball" cx="200" cy="130" r="5" />
+            </svg>
           </div>
-          <div class="card">
-            <h2 class="card__title">Player points</h2>
-            <p class="faint" id="pointsKey"></p>
-            <div class="table-scroll" id="pointsTable"></div>
-          </div>
-        </section>
+        </div>
 
-        <section class="panel" id="panel-discipline" role="tabpanel" aria-labelledby="tab-discipline" hidden>
-          <div class="card">
-            <h2 class="card__title">Fair play</h2>
-            <p class="faint">Cleanest team first. Fouls, yellow and red cards all cost points.</p>
-            <div class="table-scroll" id="fairPlay"></div>
+        <div class="wrap">
+          <dl class="site-stats" id="siteStats">
+            <div><dt>Tournaments</dt><dd data-count="tournaments">–</dd></div>
+            <div><dt>Matches played</dt><dd data-count="matches">–</dd></div>
+            <div><dt>Goals</dt><dd data-count="goals">–</dd></div>
+            <div><dt>Players</dt><dd data-count="players">–</dd></div>
+          </dl>
+        </div>
+      </section>
+
+      <section class="wrap land-section" id="tournaments" aria-labelledby="tournamentsTitle">
+        <div class="land-section__head">
+          <h2 id="tournamentsTitle">Tournaments</h2>
+          <p class="faint">Tap one to open its scoreboard.</p>
+        </div>
+        <div id="tournamentGroups">
+          <div class="tgrid">
+            <div class="tcard tcard--skeleton"></div>
+            <div class="tcard tcard--skeleton"></div>
+            <div class="tcard tcard--skeleton"></div>
           </div>
-          <div class="card"><h2 class="card__title">Cards</h2><div class="table-scroll" id="cards"></div></div>
-        </section>
-      </div>
+        </div>
+      </section>
+
+      <section class="wrap land-section" id="playersSection" aria-labelledby="playersTitle" hidden>
+        <div class="land-section__head">
+          <h2 id="playersTitle">Players</h2>
+          <a class="land-more" href="/players">All players →</a>
+        </div>
+        <div class="player-strip" id="playerStrip"></div>
+      </section>
+
+      <section class="wrap land-section" id="hofTeaser" hidden>
+        <a class="hof-teaser" href="/hall-of-fame">
+          <span class="hof-teaser__icon" aria-hidden="true">🏆</span>
+          <span>
+            <span class="eyebrow">Hall of Fame</span>
+            <span class="hof-teaser__title" id="hofTitle"></span>
+            <span class="faint" id="hofSub"></span>
+          </span>
+          <span class="hof-teaser__go" aria-hidden="true">→</span>
+        </a>
+      </section>
     </main>
 
     <footer class="site-foot">
       <div class="wrap spread">
-        <span class="faint">Updated <span id="updated">—</span></span>
+        <span class="faint">WeGro Tournaments</span>
         <span class="foot-links">
-          <a class="faint" href="/hall-of-fame.html">Hall of Fame</a>
+          <a class="faint" href="/players">Players</a>
+          <a class="faint" href="/hall-of-fame">Hall of Fame</a>
           <span class="faint">
             Developed by
             <a href="https://github.com/NitPaul" target="_blank" rel="noopener noreferrer" class="credit">NitPaul</a>
@@ -128,6 +150,6 @@
       </div>
     </footer>
 
-    <script type="module" src="js/public.js"></script>
+    <script type="module" src="/js/landing.js"></script>
   </body>
 </html>

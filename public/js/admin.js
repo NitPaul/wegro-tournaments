@@ -9,8 +9,13 @@
  */
 
 import * as D from "/shared/domain/index.js";
-import { $, $$, confirmPhrase, rememberTab, setHTML, show, toast, wireTabs } from "./ui.js";
-import { auth, serverNow, syncClock, tournaments, transfer, users, watchTournament } from "./api.js";
+import { $, $$, confirmPhrase, rememberTab, setHTML, show, toast, wireSiteHeader, wireTabs } from "./ui.js";
+import { auth, serverNow, syncClock, tournaments, transfer, watchTournament } from "./api.js";
+import { renderAccounts, wireAccounts } from "./admin/accounts.js";
+import { renderOverview, wireOverview } from "./admin/overview.js";
+import { renderPlayers as renderRoster, tournamentChanged, wirePlayers } from "./admin/players.js";
+import { renderAuctionDesk, sellOnBlock, wireAuctionDesk } from "./admin/auction-desk.js";
+import { renderCaptainPicker, wireRosterPicker } from "./admin/roster-picker.js";
 
 const e = D.escapeHtml;
 
@@ -21,19 +26,39 @@ let perms = { role: null, canScore: false, canManage: false };
 let stop = null;
 let selectTab = () => {};
 let liveMatchId = null;
-let mode = "login";
 
 boot();
 
 async function boot() {
+  wireSiteHeader();
   await syncClock();
   wireAuthForm();
 
   let saveTab = () => {};
-  selectTab = wireTabs($("#tabs"), { onChange: (n) => saveTab(n) });
+  selectTab = wireTabs($("#tabs"), {
+    onChange: (n) => {
+      saveTab(n);
+      if (n === "players") renderRoster();
+      // The tournament bar says which tournament the tabs act on. The super
+      // admin's Tournaments and Accounts screens act on none, so hide it there.
+      $("#adminView").classList.toggle("on-global-tab", n === "tournaments" || n === "accounts");
+    },
+  });
   saveTab = rememberTab("wgt:admintab", selectTab);
 
   wireConsole();
+  wireOverview({
+    open: (tid) => {
+      $("#pickTournament").value = tid;
+      openTournament(tid);
+      selectTab("setup");
+    },
+    refresh: refreshIdentity,
+  });
+  wireAccounts({ getTournaments: () => myTournaments });
+  wirePlayers(() => ({ me, data, perms }));
+  wireAuctionDesk(() => data);
+  wireRosterPicker(() => data);
   await refreshIdentity();
   setInterval(tickClock, 500);
 }
@@ -41,79 +66,92 @@ async function boot() {
 /* ------------------------------------------------------------------- auth */
 
 function wireAuthForm() {
-  $("#switchMode").addEventListener("click", () => {
-    mode = mode === "login" ? "register" : "login";
-    const registering = mode === "register";
-    $("#authTitle").textContent = registering ? "Create an account" : "Sign in";
-    $("#submitBtn").textContent = registering ? "Create account" : "Sign in";
-    $("#switchPrompt").textContent = registering ? "Already have one?" : "New here?";
-    $("#switchMode").textContent = registering ? "Sign in instead" : "Create an account";
-    show($("#nameField"), registering);
-    $("#password").autocomplete = registering ? "new-password" : "current-password";
-  });
-
   $("#loginForm").addEventListener("submit", async (ev) => {
     ev.preventDefault();
-    const email = $("#email").value.trim();
-    const password = $("#password").value;
+    const button = $("#submitBtn");
+    button.disabled = true;
     try {
-      if (mode === "register") {
-        await auth.register($("#name").value.trim(), email, password);
-      } else {
-        await auth.login(email, password);
-      }
+      await auth.login($("#login").value.trim(), $("#password").value);
       $("#password").value = "";
       await refreshIdentity();
     } catch (err) {
       toast(err.message, "err");
+    } finally {
+      button.disabled = false;
     }
   });
 
-  for (const btn of [$("#signOut"), $("#pendingSignOut")]) {
-    btn.addEventListener("click", async () => {
-      await auth.logout();
-      stop?.();
-      location.reload();
-    });
-  }
+  $("#signOut").addEventListener("click", async () => {
+    await auth.logout();
+    stop?.();
+    location.reload();
+  });
 }
 
+/**
+ * Who is signed in, and which tournament(s) they may work on.
+ *
+ * A super admin gets a picker over every tournament plus the Tournaments and
+ * Accounts screens. Anybody else has exactly one tournament — the server only
+ * ever tells them about that one — so it is shown by name and code, with
+ * nothing to choose.
+ */
 async function refreshIdentity() {
   const payload = await auth.me().catch(() => ({ user: null, tournaments: [] }));
   me = payload.user;
   myTournaments = payload.tournaments ?? [];
 
   show($("#loginView"), !me);
-  show($("#pendingView"), Boolean(me) && me.status === "pending" && !me.isSuper);
-  show($("#adminView"), Boolean(me) && (me.status === "active" || me.isSuper));
-
+  show($("#adminView"), Boolean(me));
   if (!me) return;
-  $("#pendingWho").textContent = `Signed in as ${me.email}`;
-  if (me.status === "pending" && !me.isSuper) return;
 
-  $("#whoami").textContent = `${me.name || me.email}${me.isSuper ? " · super admin" : ""}`;
-  show($("#createCard"), me.isSuper);
+  $("#whoami").textContent = `${me.name || me.username}${me.isSuper ? " · super admin" : ""}`;
 
+  const isSuper = me.isSuper;
   const picker = $("#pickTournament");
-  setHTML(
-    picker,
-    myTournaments
-      .map((t) => `<option value="${e(t.id)}">${e(t.name)}${t.season ? ` ${e(t.season)}` : ""} — ${e(t.status)}</option>`)
-      .join(""),
-  );
-  show(picker, myTournaments.length > 0);
+  const hasOne = myTournaments.length > 0;
 
-  show($("#noTournaments"), myTournaments.length === 0);
-  $("#noTournamentsWhy").textContent = me.isSuper
-    ? "Create one below to get started."
-    : "You have not been assigned to a tournament yet. An organiser needs to add you.";
-  show($("#adminBody"), myTournaments.length > 0);
+  show($("#contextBar"), hasOne);
+  show(picker, isSuper && hasOne);
+  show($("#contextName"), !isSuper && hasOne);
 
-  if (!picker.dataset.wired) {
-    picker.dataset.wired = "1";
-    picker.addEventListener("change", () => openTournament(picker.value));
+  if (isSuper) {
+    const current = picker.value;
+    setHTML(
+      picker,
+      myTournaments
+        .map((t) => `<option value="${e(t.id)}">${e(t.name)}${t.season ? ` ${e(t.season)}` : ""}</option>`)
+        .join(""),
+    );
+    if (current && myTournaments.some((t) => t.id === current)) picker.value = current;
+    if (!picker.dataset.wired) {
+      picker.dataset.wired = "1";
+      picker.addEventListener("change", () => openTournament(picker.value));
+    }
   }
-  if (myTournaments.length) openTournament(picker.value || myTournaments[0].id);
+
+  show($("#tab-tournaments"), isSuper);
+  show($("#tab-accounts"), isSuper);
+  show($("#noTournaments"), !hasOne && !isSuper);
+  $("#noTournamentsWhy").textContent =
+    "This account is not attached to a tournament. Ask the super admin to check it.";
+  show($("#adminBody"), hasOne || isSuper);
+
+  if (isSuper) {
+    renderOverview();
+    renderAccounts(myTournaments);
+  }
+
+  if (hasOne) {
+    openTournament(isSuper ? picker.value || myTournaments[0].id : myTournaments[0].id);
+  } else {
+    // A super admin with no tournaments yet: only the two super-admin screens
+    // make sense, so start on the one where the first tournament is created.
+    data = null;
+    stop?.();
+    applyRole();
+    selectTab("tournaments");
+  }
 }
 
 /* ------------------------------------------------------------- tournament */
@@ -141,29 +179,51 @@ function openTournament(tid) {
  * match day" knows exactly where they stand.
  */
 function applyRole() {
-  const manage = perms.canManage || me?.isSuper;
-  const superOnly = Boolean(me?.isSuper);
+  const isSuper = Boolean(me?.isSuper);
+  const loaded = Boolean(data);
+  const manage = loaded && (perms.canManage || isSuper);
+  const canRead = loaded && Boolean(perms.role);
 
-  show($("#tab-setup"), manage);
-  show($("#tab-auction"), manage && data.format !== "friendly");
-  show($("#tab-live"), perms.canScore || manage);
-  show($("#tab-settings"), manage);
-  show($("#tab-people"), superOnly);
-  show($("#tab-danger"), superOnly);
+  show($("#tab-setup"), canRead && perms.role !== "referee");
+  show($("#tab-auction"), canRead && perms.role !== "referee" && data?.format !== "friendly");
+  show($("#tab-live"), canRead);
+  show($("#tab-settings"), canRead && perms.role !== "referee");
+  show($("#tab-danger"), loaded && isSuper);
+  show($("#tab-players"), isSuper || perms.role === "admin");
+
+  if (loaded) {
+    const current = myTournaments.find((t) => t.id === data.id);
+    $("#contextName").textContent = data.name;
+    $("#contextCode").textContent = data.code ?? current?.code ?? "";
+  }
+
+  // Finished: everything stays visible, nothing can be changed. The server
+  // refuses the writes anyway; disabling the controls just says so up front.
+  const readOnly = Boolean(perms.readOnly);
+  show($("#readOnlyNote"), readOnly);
+  for (const id of ["panel-setup", "panel-auction", "panel-live", "panel-settings"]) {
+    $(`#${id}`).classList.toggle("is-readonly", readOnly);
+    for (const el of $$(`#${id} input, #${id} select, #${id} button, #${id} textarea`)) {
+      if (el.id === "liveMatch") continue; // choosing which match to look at is still fine
+      el.disabled = readOnly;
+    }
+  }
 
   const note =
     perms.role === "referee"
-      ? "You are the referee on this tournament. You can run match day — the clock, scores, goals and cards. Squads, the auction and settings belong to the tournament admin."
+      ? "You are the referee. You run match day — the clock, scores, goals and cards."
       : perms.role === "admin"
-        ? "You are the tournament admin. You can set up squads, run the auction and score matches. Only the super admin can create tournaments or assign staff."
+        ? "You are the tournament admin. You set up squads, run the auction and score matches."
         : "";
-  show($("#roleNote"), Boolean(note));
+  show($("#roleNote"), Boolean(note) && !readOnly);
   $("#roleNote").textContent = note;
 
   // If the open tab is one this person cannot use, move them somewhere useful
   // rather than leaving them on a blank panel.
   const active = $$('[role="tab"]').find((t) => t.getAttribute("aria-selected") === "true");
-  if (active?.hidden) selectTab(perms.canScore ? "live" : "setup");
+  if (!active || active.hidden) {
+    selectTab(!loaded ? "tournaments" : perms.role === "referee" ? "live" : manage || isSuper ? "setup" : "live");
+  }
 }
 
 /* ---------------------------------------------------------------- rendering */
@@ -172,11 +232,14 @@ function renderAll() {
   renderTeams();
   renderPlayers();
   renderMatches();
-  renderAuction();
+  renderAuctionDesk();
+  renderCaptainPicker();
   renderLive();
   renderSettings();
   $("#statusSelect").value = data.status;
-  if (me?.isSuper) renderPeople();
+  tournamentChanged();
+  // Re-apply after re-rendering, so freshly drawn controls are disabled too.
+  if (perms.readOnly) applyRole();
 }
 
 /**
@@ -309,74 +372,6 @@ function renderMatches() {
   );
 }
 
-function renderAuction() {
-  const state = D.auctionState(data);
-  const unsold = D.unsoldPlayers(data);
-
-  setHTML(
-    $("#sellPlayer"),
-    `<option value="">— pick a player —</option>` +
-      unsold.map((p) => `<option value="${e(p.id)}">${e(p.pos)} · ${e(p.name)}</option>`).join(""),
-  );
-  setHTML($("#sellTeam"), teamOptions(null, { blank: "— pick a team —" }));
-  $("#sellPrice").placeholder = String(D.getSettings(data).basePrice);
-
-  setHTML(
-    $("#captainGrid"),
-    D.teamsList(data)
-      .map((t) => {
-        const st = state[t.id];
-        if (!st) return "";
-        const chips = D.POSITIONS.map((pos) => `${pos} ${st.counts[pos]}/${st.max[pos]}`).join(" · ");
-        return `<div class="staff-row">
-          <b class="grow">${e(t.name)}</b>
-          <span class="pill pill--mint">${e(D.bdt(st.remaining))} left</span>
-          <span class="faint">${st.squad.length}/${st.squadSize} · ${e(chips)}</span>
-          <span class="faint">max bid ${e(D.bdt(st.maxBid))}</span>
-        </div>`;
-      })
-      .join("") || `<p class="faint">Add teams first.</p>`,
-  );
-
-  setHTML(
-    $("#poolList"),
-    D.auctionPlayers(data)
-      .map(
-        (p) => `<div class="people-row">
-          <span class="faint" style="min-width:34px">${e(p.pos)}</span>
-          <span class="grow">${e(p.name)}</span>
-          ${
-            p.teamId
-              ? `<span class="pill pill--mint">${e(D.teamById(data, p.teamId)?.name)} · ${e(D.bdt(p.price))}</span>
-                 <button class="btn btn--sm btn--ghost" data-unsell="${e(p.id)}" type="button">Unsell</button>`
-              : `<span class="pill">Available</span>`
-          }
-        </div>`,
-      )
-      .join("") || `<p class="faint">No auction pool.</p>`,
-  );
-
-  // Live feedback as the price is typed, using the same validator the server
-  // will run — so the message you see is the message you would have got.
-  const hint = () => {
-    const playerId = $("#sellPlayer").value;
-    const teamId = $("#sellTeam").value;
-    const price = Number($("#sellPrice").value);
-    if (!playerId || !teamId || !$("#sellPrice").value) return ($("#sellHint").textContent = "");
-    const res = D.validateSale(data, playerId, teamId, price);
-    $("#sellHint").textContent = res.ok ? "Looks good." : res.error;
-    $("#sellHint").className = res.ok ? "faint" : "faint err";
-  };
-  for (const id of ["#sellPlayer", "#sellTeam", "#sellPrice"]) {
-    const el = $(id);
-    if (!el.dataset.hinted) {
-      el.dataset.hinted = "1";
-      el.addEventListener("input", hint);
-      el.addEventListener("change", hint);
-    }
-  }
-}
-
 function renderLive() {
   const matches = D.matchesList(data);
   if (!matches.length) {
@@ -476,6 +471,19 @@ function renderSettings() {
     `<label class="field"><span>${e(label)}</span>
        <input class="input" data-setting="${e(id)}" type="${type}" value="${e(value ?? "")}" /></label>`;
 
+  $("#detailsCode").textContent = data.code ?? "";
+  const detail = (key, label, value, type = "text", extra = "") =>
+    `<label class="field"><span>${e(label)}</span>
+       <input class="input" data-detail="${e(key)}" type="${type}" value="${e(value ?? "")}" ${extra} /></label>`;
+  setHTML(
+    $("#detailsGrid"),
+    [
+      detail("name", "Name", data.name, "text", 'maxlength="80" required'),
+      detail("season", "Season", data.season, "text", 'maxlength="20"'),
+      detail("startsOn", "Start date (leave empty if not decided)", data.startsOn, "date"),
+    ].join(""),
+  );
+
   setHTML(
     $("#metaGrid"),
     [
@@ -531,44 +539,6 @@ function renderSettings() {
   );
 }
 
-async function renderPeople() {
-  try {
-    const [{ staff }, { users: all }] = await Promise.all([tournaments.staff(data.id), users.list()]);
-
-    setHTML(
-      $("#staffList"),
-      staff
-        .map(
-          (s) => `<div class="staff-row">
-            <b class="grow">${e(s.name || s.email)}</b>
-            <span class="pill ${s.role === "admin" ? "pill--mint" : ""}">${e(s.role)}</span>
-            <span class="faint">${e(s.email)}</span>
-            <button class="btn btn--sm btn--danger" data-unassign="${e(s.userId)}" type="button">Remove</button>
-          </div>`,
-        )
-        .join("") || `<p class="faint">Nobody assigned yet.</p>`,
-    );
-
-    setHTML(
-      $("#peopleList"),
-      all
-        .map(
-          (u) => `<div class="people-row${u.status === "pending" ? " pending-card" : ""}">
-            <b class="grow">${e(u.name || u.email)}</b>
-            <span class="faint">${e(u.email)}</span>
-            <span class="pill${u.status === "pending" ? " pill--gold" : ""}">${e(u.status)}</span>
-            ${u.isSuper ? `<span class="pill pill--mint">super</span>` : ""}
-            <button class="btn btn--sm btn--primary" data-assign="${e(u.id)}" data-role="admin" type="button">Make admin</button>
-            <button class="btn btn--sm btn--ghost" data-assign="${e(u.id)}" data-role="referee" type="button">Make referee</button>
-          </div>`,
-        )
-        .join(""),
-    );
-  } catch (err) {
-    setHTML($("#peopleList"), `<p class="faint err">${e(err.message)}</p>`);
-  }
-}
-
 /* ------------------------------------------------------------------ events */
 
 /** One delegated handler for the whole console, so re-rendering never unbinds. */
@@ -586,24 +556,6 @@ function wireConsole() {
       }
     };
 
-    // Creating a tournament is the one action that has to work when no
-    // tournament is loaded — it is how the first one comes into existence.
-    // It therefore sits above the guard below.
-    if (t.id === "createTournament") {
-      const name = $("#newTournamentName").value.trim();
-      if (!name) return toast("Give it a name.", "err");
-      return run(async () => {
-        await tournaments.create({
-          name,
-          season: $("#newTournamentSeason").value.trim(),
-          format: $("#newTournamentFormat").value,
-          startsOn: $("#newTournamentDate").value || null,
-        });
-        $("#newTournamentName").value = "";
-        await refreshIdentity();
-      }, `${name} created.`);
-    }
-
     // Everything below acts on the open tournament.
     if (!data) return;
 
@@ -612,9 +564,14 @@ function wireConsole() {
       const name = $("#newTeamName").value.trim();
       if (!name) return toast("Give the team a name.", "err");
       return run(async () => {
-        await tournaments.addTeam(data.id, { name, captainName: $("#newCaptainName").value.trim() });
+        await tournaments.addTeam(data.id, {
+          name,
+          captainPersonId: $("#newCaptainPerson").value || undefined,
+          captainName: $("#newCaptainName").value.trim(),
+        });
         $("#newTeamName").value = "";
         $("#newCaptainName").value = "";
+        $("#newCaptainPerson").value = "";
       }, `${name} added.`);
     }
     if (t.dataset.teamDel) {
@@ -649,11 +606,12 @@ function wireConsole() {
 
     // --- auction
     if (t.id === "sellBtn") {
-      return run(async () => {
-        await tournaments.sell(data.id, $("#sellPlayer").value, $("#sellTeam").value, Number($("#sellPrice").value));
-        $("#sellPrice").value = "";
-        $("#sellHint").textContent = "";
-      }, "Sold.");
+      try {
+        toast(await sellOnBlock());
+      } catch (err) {
+        toast(err.message, "err");
+      }
+      return;
     }
     if (t.dataset.unsell) {
       return run(() => tournaments.unsell(data.id, t.dataset.unsell), "Returned to the pool.");
@@ -719,20 +677,6 @@ function wireConsole() {
       );
     }
 
-    // --- people
-    if (t.dataset.assign) {
-      return run(async () => {
-        await tournaments.assign(data.id, t.dataset.assign, t.dataset.role);
-        renderPeople();
-      }, `Assigned as ${t.dataset.role}.`);
-    }
-    if (t.dataset.unassign) {
-      return run(async () => {
-        await tournaments.unassign(data.id, t.dataset.unassign);
-        renderPeople();
-      }, "Removed from this tournament.");
-    }
-
     // --- import and export
     if (t.id === "exportBtn") {
       // A plain navigation, so the browser handles the save dialog and the
@@ -794,6 +738,26 @@ function wireConsole() {
     }
   });
 
+  // Name, season and start date — the tournament's own admin may change these.
+  $("#detailsGrid").addEventListener("change", async (ev) => {
+    const el = ev.target.closest("[data-detail]");
+    if (!el || !data) return;
+    const key = el.dataset.detail;
+    const value = el.value.trim();
+    if (key === "name" && !value) {
+      el.value = data.name;
+      return toast("A tournament needs a name.", "err");
+    }
+    try {
+      await tournaments.update(data.id, { [key]: value || null });
+      toast(key === "name" ? "Renamed. The code stays the same." : "Saved.");
+      if (key === "name") await refreshIdentity();
+    } catch (err) {
+      el.value = data[key] ?? "";
+      toast(err.message, "err");
+    }
+  });
+
   // Settings save on blur — one write per field, no Save button to forget.
   document.addEventListener(
     "change",
@@ -832,10 +796,10 @@ function wireConsole() {
       await tournaments.update(data.id, { status });
       toast(
         status === "active"
-          ? "Live on the public site."
+          ? "Published on the public site."
           : status === "completed"
-            ? "Finished, and added to the Hall of Fame."
-            : "Back to draft — hidden from the public.",
+            ? "Finished, locked, and added to the Hall of Fame."
+            : "Hidden from the public.",
       );
       await refreshIdentity();
     } catch (err) {

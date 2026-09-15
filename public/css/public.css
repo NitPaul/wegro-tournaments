@@ -18,64 +18,6 @@
   border-radius: 5px;
 }
 
-/* ---- Header --------------------------------------------------------------- */
-.site-head {
-  position: sticky;
-  top: 0;
-  z-index: 40;
-  background: rgba(4, 33, 30, 0.82);
-  backdrop-filter: blur(12px);
-  -webkit-backdrop-filter: blur(12px);
-  border-bottom: 1px solid var(--line);
-}
-.site-head__inner {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 12px;
-  min-height: 58px;
-}
-/* The logo is only 26px tall, but the tappable area around it should not be —
-   44px is the size a thumb actually hits reliably. */
-.brand {
-  display: inline-flex;
-  align-items: center;
-  min-height: 44px;
-}
-.brand img {
-  height: 26px;
-  width: auto;
-}
-.site-head__meta {
-  display: flex;
-  align-items: center;
-  gap: 10px;
-}
-.updated {
-  font-size: 12px;
-  color: var(--muted);
-  white-space: nowrap;
-}
-/* Keep the header on one line on a phone: the signed-in email and the
-   "Updated …" stamp are nice-to-have, the buttons are not. */
-@media (max-width: 520px) {
-  .site-head__meta > .pill {
-    display: none;
-  }
-  .site-head__meta .btn {
-    padding: 7px 11px;
-    font-size: 13px;
-  }
-  .brand img {
-    height: 22px;
-  }
-}
-@media (max-width: 380px) {
-  .updated {
-    display: none;
-  }
-}
-
 /* ---- Hero ----------------------------------------------------------------- */
 .hero {
   display: grid;

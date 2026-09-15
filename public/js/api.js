@@ -70,8 +70,8 @@ export const api = {
 
 export const auth = {
   me: () => api.get("/auth/me"),
-  login: (email, password) => api.post("/auth/login", { email, password }),
-  register: (name, email, password) => api.post("/auth/register", { name, email, password }),
+  /** `login` is a User ID, or the email of an account that has one. */
+  login: (login, password) => api.post("/auth/login", { login, password }),
   logout: () => api.post("/auth/logout"),
   changePassword: (currentPassword, newPassword) =>
     api.post("/auth/password", { currentPassword, newPassword }),
@@ -81,6 +81,8 @@ export const auth = {
 
 export const tournaments = {
   list: () => api.get("/tournaments"),
+  overview: () => api.get("/tournaments/overview"),
+  activity: (tid, limit = 100) => api.get(`/tournaments/${encodeURIComponent(tid)}/activity?limit=${limit}`),
   get: (tid) => api.get(`/tournaments/${encodeURIComponent(tid)}`),
   create: (body) => api.post("/tournaments", body),
   update: (tid, body) => api.patch(`/tournaments/${encodeURIComponent(tid)}`, body),
@@ -107,6 +109,9 @@ export const tournaments = {
   placeGuest: (tid, playerId, teamId) =>
     api.post(`/tournaments/${encodeURIComponent(tid)}/auction/guest`, { playerId, teamId }),
   resetAuction: (tid) => api.post(`/tournaments/${encodeURIComponent(tid)}/auction/reset`),
+  /** Put a player on the block for the projector, or pass null to clear it. */
+  block: (tid, playerId) => api.post(`/tournaments/${encodeURIComponent(tid)}/auction/block`, { playerId }),
+  addFromRoster: (tid, body) => api.post(`/tournaments/${encodeURIComponent(tid)}/players/from-roster`, body),
 
   generateFixtures: (tid, body) =>
     api.post(`/tournaments/${encodeURIComponent(tid)}/matches/generate`, body ?? {}),
@@ -128,11 +133,46 @@ export const tournaments = {
 };
 
 export const users = {
-  list: (status) => api.get(`/users${status ? `?status=${status}` : ""}`),
+  list: () => api.get("/users"),
   create: (body) => api.post("/users", body),
+  resetPassword: (id, password) => api.post(`/users/${id}/password`, { password }),
   setStatus: (id, status) => api.post(`/users/${id}/status`, { status }),
   setSuper: (id, isSuper) => api.post(`/users/${id}/super`, { isSuper }),
   remove: (id) => api.del(`/users/${id}`),
+};
+
+export const people = {
+  list: () => api.get("/people"),
+  get: (id) => api.get(`/people/${encodeURIComponent(id)}`),
+  create: (body) => api.post("/people", body),
+  update: (id, body) => api.patch(`/people/${encodeURIComponent(id)}`, body),
+  remove: (id) => api.del(`/people/${encodeURIComponent(id)}`),
+  removePhoto: (id) => api.del(`/people/${encodeURIComponent(id)}/photo`),
+
+  /** Upload an already-resized image Blob. */
+  async uploadPhoto(id, blob) {
+    let res;
+    try {
+      res = await fetch(`/api/people/${encodeURIComponent(id)}/photo`, {
+        method: "PUT",
+        headers: { "Content-Type": blob.type || "application/octet-stream" },
+        body: blob,
+        credentials: "same-origin",
+      });
+    } catch {
+      throw new ApiError(0, "offline", "Cannot reach the server. Check your connection.");
+    }
+    const payload = await res.json().catch(() => null);
+    if (!res.ok) {
+      const err = payload?.error ?? {};
+      throw new ApiError(res.status, err.code ?? "error", err.message ?? `Upload failed (${res.status}).`);
+    }
+    return payload;
+  },
+
+  /** Say which roster person a tournament player is, or pass null to unlink. */
+  link: (tid, playerId, personId) =>
+    api.post(`/tournaments/${encodeURIComponent(tid)}/players/${encodeURIComponent(playerId)}/person`, { personId }),
 };
 
 export const archive = {

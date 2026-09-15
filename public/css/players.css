@@ -1,0 +1,318 @@
+/* ==========================================================================
+   Player cards and the player list — shared by the landing page and /players.
+   ========================================================================== */
+
+/* ---- A player card -------------------------------------------------------- */
+
+.player-strip,
+.pc-grid {
+  display: grid;
+  gap: var(--space-4);
+  grid-template-columns: repeat(auto-fill, minmax(min(46%, 190px), 1fr));
+}
+/* Eight on the landing page: two even rows of four, not five and three. */
+@media (min-width: 900px) {
+  .player-strip {
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+  }
+}
+.pc {
+  position: relative;
+  display: grid;
+  border-radius: var(--radius);
+  overflow: hidden;
+  background: var(--surface);
+  border: 1px solid var(--line);
+  box-shadow: var(--highlight), var(--shadow);
+  color: var(--text);
+  text-decoration: none;
+  animation: rise var(--dur-slow) var(--ease-out) both;
+  animation-delay: calc(min(var(--i, 0), 16) * 40ms);
+  transition: transform var(--dur) var(--ease-out), border-color var(--dur) ease;
+}
+.pc:hover {
+  text-decoration: none;
+  transform: translateY(-3px);
+  border-color: var(--line-strong);
+}
+@keyframes rise {
+  from {
+    opacity: 0;
+    transform: translateY(14px);
+  }
+}
+.pc__media {
+  position: relative;
+  display: block;
+  aspect-ratio: 1;
+  background: var(--surface-2);
+}
+.pc__photo {
+  display: block;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+.pc__photo--empty {
+  display: grid;
+  place-items: center;
+  font-family: var(--font-display);
+  font-size: 44px;
+  font-weight: 800;
+  color: var(--faint);
+  background:
+    radial-gradient(circle at 50% 35%, rgba(70, 220, 170, 0.12), transparent 60%),
+    var(--surface-2);
+}
+/* A soft fade so the rating badge is readable over any photo. */
+.pc__media::after {
+  content: "";
+  position: absolute;
+  inset: 55% 0 0;
+  background: linear-gradient(180deg, transparent, rgba(2, 20, 17, 0.75));
+  pointer-events: none;
+}
+.pc__rating {
+  position: absolute;
+  z-index: 1;
+  left: var(--space-3);
+  top: var(--space-3);
+  display: grid;
+  justify-items: center;
+  min-width: 48px;
+  padding: 6px 8px 5px;
+  border-radius: 12px;
+  background: rgba(2, 20, 17, 0.78);
+  border: 1px solid var(--line-strong);
+  backdrop-filter: blur(6px);
+  line-height: 1;
+}
+.pc__rating b {
+  font-family: var(--font-display);
+  font-size: 24px;
+  font-weight: 800;
+  letter-spacing: -0.02em;
+}
+.pc__rating small {
+  margin-top: 3px;
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--muted);
+}
+.pc--elite .pc__rating {
+  border-color: rgba(240, 198, 90, 0.7);
+}
+.pc--elite .pc__rating b {
+  color: var(--gold);
+}
+.pc--strong .pc__rating b {
+  color: var(--mint);
+}
+.pc__titles {
+  position: absolute;
+  z-index: 1;
+  right: var(--space-3);
+  top: var(--space-3);
+  padding: 4px 8px;
+  border-radius: var(--radius-pill);
+  background: rgba(2, 20, 17, 0.78);
+  font-size: 13px;
+  font-weight: 700;
+}
+.pc__body {
+  display: grid;
+  gap: 2px;
+  padding: var(--space-3) var(--space-3) var(--space-4);
+}
+.pc__name {
+  font-family: var(--font-display);
+  font-weight: 800;
+  font-size: 16px;
+  line-height: 1.2;
+}
+.pc__pos {
+  font-size: 12px;
+  color: var(--muted);
+}
+.pc__stats {
+  margin-top: var(--space-1);
+  font-size: 12px;
+  color: var(--faint);
+}
+
+/* ---- The player list page ------------------------------------------------- */
+
+.players-tools {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-3);
+  align-items: center;
+  margin: var(--space-4) 0 var(--space-5);
+}
+.players-tools .input[type="search"] {
+  flex: 1 1 220px;
+  width: auto;
+}
+.players-tools select.input {
+  width: auto;
+  flex: 0 1 190px;
+}
+
+/* ---- One player ----------------------------------------------------------- */
+
+.profile {
+  display: grid;
+  gap: var(--space-5);
+  grid-template-columns: minmax(0, 1fr);
+  padding-top: var(--space-5);
+}
+@media (min-width: 820px) {
+  .profile {
+    grid-template-columns: 300px minmax(0, 1fr);
+    align-items: start;
+  }
+}
+/* Pinned beside the details on a wide screen; on a phone it would sit over
+   the page as you scroll, so it only sticks where there is a column for it. */
+@media (min-width: 820px) {
+  .profile__card {
+    position: sticky;
+    top: 80px;
+  }
+}
+.profile__card .pc {
+  animation: none;
+}
+.profile__card .pc:hover {
+  transform: none;
+}
+.profile__name {
+  font-size: clamp(30px, 5vw, 46px);
+  letter-spacing: -0.035em;
+  margin: 0;
+}
+.profile__sub {
+  margin: var(--space-1) 0 0;
+  color: var(--muted);
+}
+.rating-pair {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-3);
+  margin: var(--space-4) 0 0;
+}
+.rating-pair > div {
+  padding: var(--space-3) var(--space-4);
+  border-radius: var(--radius-sm);
+  background: var(--surface);
+  border: 1px solid var(--line);
+}
+.rating-pair dt {
+  font-size: 12px;
+  color: var(--faint);
+  font-weight: 700;
+}
+.rating-pair dd {
+  margin: 2px 0 0;
+  font-family: var(--font-display);
+  font-size: 30px;
+  font-weight: 800;
+}
+.career-tiles {
+  display: grid;
+  gap: var(--space-3);
+  grid-template-columns: repeat(auto-fill, minmax(120px, 1fr));
+}
+.career-tiles > div {
+  padding: var(--space-3) var(--space-4);
+  border-radius: var(--radius-sm);
+  background: var(--surface);
+  border: 1px solid var(--line);
+}
+.career-tiles dt {
+  font-size: 12px;
+  color: var(--faint);
+  font-weight: 700;
+}
+.career-tiles dd {
+  margin: 2px 0 0;
+  font-family: var(--font-display);
+  font-size: 26px;
+  font-weight: 800;
+}
+.medal-list {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-2);
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+.medal-list li {
+  padding: 6px 12px;
+  border-radius: var(--radius-pill);
+  background: rgba(240, 198, 90, 0.12);
+  border: 1px solid rgba(240, 198, 90, 0.4);
+  color: var(--gold);
+  font-weight: 700;
+  font-size: 14px;
+}
+.back-link {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-2);
+  margin-top: var(--space-4);
+  font-weight: 700;
+}
+
+/* ---- Faces on the tournament page ----------------------------------------- */
+
+.face {
+  display: inline-grid;
+  place-items: center;
+  flex: 0 0 auto;
+  width: 44px;
+  height: 44px;
+  border-radius: 50%;
+  object-fit: cover;
+  background: var(--surface-3);
+  color: var(--muted);
+  font-family: var(--font-display);
+  font-weight: 800;
+  font-size: 14px;
+}
+.face--sm {
+  width: 30px;
+  height: 30px;
+  font-size: 11px;
+}
+.captain-row {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+  padding: var(--space-2) 0;
+  border-bottom: 1px solid var(--line);
+}
+.captain-row:last-child {
+  border-bottom: 0;
+}
+.captain-row__text {
+  display: grid;
+  flex: 1 1 auto;
+  min-width: 0;
+}
+.person-link {
+  color: inherit;
+  text-decoration: underline;
+  text-decoration-color: rgba(255, 255, 255, 0.25);
+  text-underline-offset: 3px;
+}
+.person-link:hover {
+  color: var(--mint);
+  text-decoration-color: currentColor;
+}
+.squad__list li .grow {
+  flex: 1 1 auto;
+}

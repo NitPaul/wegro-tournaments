@@ -1,13 +1,15 @@
 /**
  * Back up everything — `npm run backup`.
  *
- * Writes two files, because they answer different questions:
+ * Writes two files and a folder, because they answer different questions:
  *
  *   wegro-<timestamp>.sqlite   an exact copy of the database, for restoring
  *                              this system quickly and completely
  *   wegro-<timestamp>.json     a readable dump, for reading the data without
  *                              this software, moving it somewhere else, or
  *                              checking what was in it two seasons later
+ *   wegro-<timestamp>-photos/  every player photo. They are files, not rows,
+ *                              so neither of the two above contains them.
  *
  * The `.sqlite` copy uses VACUUM INTO, which SQLite guarantees is a consistent
  * snapshot even while the server is running and the referee is mid-match. That
@@ -21,12 +23,14 @@ import process from "node:process";
 
 import { db, closeDatabase, applySchema } from "../server/db/index.js";
 import { env } from "../server/env.js";
+import { PHOTO_DIR } from "../server/photos.js";
 
 const TABLES = [
   "users",
   "tournaments",
   "tournament_staff",
   "teams",
+  "people",
   "players",
   "matches",
   "events",
@@ -68,8 +72,19 @@ export function runBackup({ dir = env.backupDir, includeUsers = true } = {}) {
 
   fs.writeFileSync(jsonPath, JSON.stringify(dump, null, 2));
 
+  const photosPath = path.join(dir, `wegro-${when}-photos`);
+  let photos = 0;
+  if (fs.existsSync(PHOTO_DIR)) {
+    fs.mkdirSync(photosPath, { recursive: true });
+    for (const name of fs.readdirSync(PHOTO_DIR)) {
+      if (name.endsWith(".part")) continue; // an upload still being written
+      fs.copyFileSync(path.join(PHOTO_DIR, name), path.join(photosPath, name));
+      photos++;
+    }
+  }
+
   const counts = Object.fromEntries(Object.entries(dump.tables).map(([t, rows]) => [t, rows.length]));
-  return { sqlitePath, jsonPath, counts };
+  return { sqlitePath, jsonPath, photosPath, photos, counts };
 }
 
 // Run directly rather than imported.
@@ -78,7 +93,8 @@ if (import.meta.url === `file://${process.argv[1]?.replace(/\\/g, "/")}` || proc
 
   console.log("Backup complete.\n");
   console.log(`  database : ${result.sqlitePath}`);
-  console.log(`  json     : ${result.jsonPath}\n`);
+  console.log(`  json     : ${result.jsonPath}`);
+  console.log(`  photos   : ${result.photosPath} (${result.photos})\n`);
   for (const [table, n] of Object.entries(result.counts)) {
     console.log(`  ${table.padEnd(18)} ${n} row${n === 1 ? "" : "s"}`);
   }

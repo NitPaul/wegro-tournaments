@@ -34,7 +34,7 @@ NODE_ENV=production
 PUBLIC_URL=https://tournaments.wegro.global   # must match the real origin
 DOMAIN=tournaments.wegro.global               # used by Caddy
 SESSION_SECRET=<64+ random hex chars>
-SUPER_ADMIN_EMAIL=organiser@example.com    # the person who will run tournaments
+SUPER_ADMIN_USERNAME=organiser               # the User ID the organiser signs in with
 SUPER_ADMIN_PASSWORD=<temporary, removed after first sign-in>
 ```
 
@@ -95,15 +95,20 @@ Secure and sign-in will fail in a way that looks like a wrong password.
 
 ## Data and backups
 
-Everything lives in the `wegro-data` volume as a single SQLite file. Rebuilding
-or updating the image never touches it.
+Everything lives in the `wegro-data` volume: the SQLite file, and a `photos/`
+folder of player pictures uploaded through the console. Rebuilding or updating
+the image never touches either.
 
 ```bash
 docker compose exec app npm run backup
 ```
 
-Writes a consistent `.sqlite` copy (via `VACUUM INTO`, safe to run mid-match)
-and a readable `.json` dump into the `wegro-backups` volume.
+Writes a consistent `.sqlite` copy (via `VACUUM INTO`, safe to run mid-match),
+a readable `.json` dump, and a copy of the photos folder into the
+`wegro-backups` volume.
+
+Photo uploads need no proxy changes: the browser shrinks every photo to about
+20 KB before sending it, far below nginx's default `client_max_body_size`.
 
 A daily cron, copied off the host:
 
@@ -153,9 +158,8 @@ backup as well.
   SHA-256, so a leaked backup does not hand over live sessions.
 - Roles are enforced server-side on every mutating request
   (`server/auth/middleware.js`), not in the browser.
-- Registration is open by default but grants nothing until a super admin
-  assigns the account to a tournament. Set `ALLOW_REGISTRATION=false` to close
-  it entirely.
+- There is no public sign-up. The super admin creates every account, and an
+  admin or referee account can only ever reach its own tournament.
 - CSP is strict: `script-src 'self'`, no inline scripts anywhere in the app.
 
 ## Before you hand it back

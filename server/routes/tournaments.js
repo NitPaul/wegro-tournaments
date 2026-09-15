@@ -16,12 +16,14 @@
 import express from "express";
 
 import * as D from "../../shared/domain/index.js";
-import { audit } from "../audit.js";
+import { audit, recentAudit } from "../audit.js";
 import { requireSuper, requireTournament, permissionsFor } from "../auth/middleware.js";
-import { badRequest, forbidden, notFoundError, route } from "../http/errors.js";
+import { badRequest, conflict, forbidden, notFoundError, route } from "../http/errors.js";
 import { broadcast } from "../stream/sse.js";
+import { getPerson, linkPlayer } from "../db/repo/people.js";
 import { recomputeArchive, removeArchive } from "../db/repo/archive.js";
 import {
+  assignmentOf,
   assignStaff,
   createTournament,
   defaultTournament,
@@ -32,6 +34,7 @@ import {
   patchMeta,
   patchSettings,
   removeStaff,
+  tournamentOverview,
   updateTournament,
 } from "../db/repo/tournaments.js";
 import {
@@ -58,7 +61,7 @@ import {
   updateEvent,
   updateMatch,
 } from "../db/repo/matches.js";
-import { db } from "../db/index.js";
+import { db, transaction } from "../db/index.js";
 
 export const tournamentRoutes = express.Router();
 
@@ -124,6 +127,19 @@ tournamentRoutes.post(
   }),
 );
 
+/**
+ * Every tournament with its code, staff, previous names and last activity — the
+ * super admin's monitoring view. Declared before `/:tid` so the word "overview"
+ * is never taken for a tournament id.
+ */
+tournamentRoutes.get(
+  "/overview",
+  requireSuper,
+  route(async (req, res) => {
+    res.json({ tournaments: tournamentOverview() });
+  }),
+);
+
 /* -------------------------------------------------------------- read one */
 
 tournamentRoutes.get(
@@ -145,6 +161,18 @@ tournamentRoutes.patch(
     const patch = {};
     for (const key of ["name", "season", "startsOn"]) {
       if (req.body?.[key] !== undefined) patch[key] = req.body[key];
+    }
+    if (patch.name !== undefined) {
+      patch.name = String(patch.name).trim();
+      if (!patch.name) throw badRequest("A tournament needs a name.");
+      if (patch.name.length > 80) throw badRequest("That name is too long — 80 characters at most.");
+    }
+    if (patch.season !== undefined) patch.season = String(patch.season ?? "").trim().slice(0, 20);
+    if (patch.startsOn !== undefined) {
+      patch.startsOn = patch.startsOn || null;
+      if (patch.startsOn && !/^\d{4}-\d{2}-\d{2}$/.test(patch.startsOn)) {
+        throw badRequest("The start date should look like 2027-03-14, or be left empty.");
+      }
     }
 
     // Status and format change what a tournament IS, so they are the super
@@ -168,7 +196,9 @@ tournamentRoutes.patch(
     updateTournament(req.tournament.id, patch);
     if (patch.status === "completed") recomputeArchive(req.tournament.id);
 
-    audit(req, "tournament.update", patch);
+    const renamedFrom =
+      patch.name !== undefined && patch.name !== req.tournament.name ? req.tournament.name : undefined;
+    audit(req, "tournament.update", { ...patch, code: req.tournament.code, renamedFrom });
     touched(req, res, "tournament");
   }),
 );
@@ -222,11 +252,24 @@ tournamentRoutes.post(
     const role = String(req.body?.role ?? "");
     if (!["admin", "referee"].includes(role)) throw badRequest("Role must be admin or referee.");
 
-    const user = db.prepare("SELECT id, email FROM users WHERE id = ?").get(userId);
-    if (!user) throw notFoundError("No such person.");
+    const user = db.prepare("SELECT id, username, is_super FROM users WHERE id = ?").get(userId);
+    if (!user) throw notFoundError("No such account.");
+    if (user.is_super === 1) {
+      throw badRequest("A super admin already has every tournament. There is nothing to assign.");
+    }
+
+    // One tournament per account. Changing the role on the same tournament is
+    // fine; moving the account to a second one is not.
+    const current = assignmentOf(userId);
+    if (current && current.id !== req.tournament.id) {
+      throw conflict(
+        `This account already belongs to ${current.code} (${current.name}). ` +
+          "Each admin or referee account is for one tournament — create a separate account for this one.",
+      );
+    }
 
     const staff = assignStaff(req.tournament.id, userId, role, req.user.id);
-    audit(req, "staff.assign", { email: user.email, role });
+    audit(req, "staff.assign", { username: user.username, role, code: req.tournament.code });
     res.json({ staff });
   }),
 );
@@ -235,10 +278,23 @@ tournamentRoutes.delete(
   "/:tid/staff/:userId",
   requireTournament("super"),
   route(async (req, res) => {
-    const user = db.prepare("SELECT email FROM users WHERE id = ?").get(req.params.userId);
+    const user = db.prepare("SELECT username FROM users WHERE id = ?").get(req.params.userId);
     const staff = removeStaff(req.tournament.id, req.params.userId);
-    audit(req, "staff.remove", { email: user?.email ?? req.params.userId });
+    audit(req, "staff.remove", { username: user?.username ?? req.params.userId, code: req.tournament.code });
     res.json({ staff });
+  }),
+);
+
+/**
+ * What has been done to this tournament, newest first. Its own admin can read
+ * it; nobody else's can.
+ */
+tournamentRoutes.get(
+  "/:tid/activity",
+  requireTournament("admin"),
+  route(async (req, res) => {
+    const limit = Math.min(Math.max(Number(req.query.limit) || 100, 1), 500);
+    res.json({ activity: recentAudit({ tournamentId: req.tournament.id, limit }) });
   }),
 );
 
@@ -261,14 +317,18 @@ tournamentRoutes.post(
 
     // A captain can be named at the same moment, which is how teams are
     // actually created — nobody adds a team and then wonders who leads it.
-    const captain = String(req.body?.captainName ?? "").trim();
+    // Picked from the roster, they arrive already matched: photo and career.
+    const captainPerson = req.body?.captainPersonId ? getPerson(String(req.body.captainPersonId)) : null;
+    if (req.body?.captainPersonId && !captainPerson) throw notFoundError("That captain is not on the roster.");
+    const captain = captainPerson?.name ?? String(req.body?.captainName ?? "").trim();
     if (captain) {
       createPlayer(req.tournament.id, {
         name: captain,
-        pos: req.body?.captainPos ?? "MID",
+        pos: req.body?.captainPos ?? captainPerson?.pos ?? "MID",
         teamId: id,
         price: 0,
         kind: "captain",
+        personId: captainPerson?.id ?? null,
       });
     }
 
@@ -338,6 +398,64 @@ tournamentRoutes.post(
   }),
 );
 
+/**
+ * Add people from the roster to this tournament in one go — the normal way to
+ * build an auction pool from the second tournament on. Each arrives matched to
+ * their roster person, so their photo and record come with them. Anyone already
+ * in the tournament is skipped and said so, not duplicated.
+ */
+tournamentRoutes.post(
+  "/:tid/players/from-roster",
+  requireTournament("admin"),
+  route(async (req, res) => {
+    const ids = Array.isArray(req.body?.personIds) ? [...new Set(req.body.personIds.map(String))] : [];
+    if (!ids.length) throw badRequest("Choose at least one player.");
+    if (ids.length > 200) throw badRequest("That is more players than a tournament can hold.");
+    const kind = req.body?.kind === "guest" ? "guest" : "auction";
+    const teamId = kind === "guest" ? req.body?.teamId || null : null;
+
+    const added = [];
+    const skipped = [];
+    transaction(() => {
+      for (const personId of ids) {
+        const person = getPerson(personId);
+        if (!person) {
+          skipped.push({ name: personId, reason: "not on the roster" });
+          continue;
+        }
+        const data = loadTournament(req.tournament.id);
+        if (Object.values(data.players).some((p) => p.personId === person.id)) {
+          skipped.push({ name: person.name, reason: "already in this tournament" });
+          continue;
+        }
+        if (!person.pos) {
+          skipped.push({ name: person.name, reason: "has no position — set one on the Players screen" });
+          continue;
+        }
+        const check = D.validateNewPlayer(data, { name: person.name, pos: person.pos, teamId, kind });
+        if (!check.ok) {
+          skipped.push({ name: person.name, reason: check.error });
+          continue;
+        }
+        createPlayer(req.tournament.id, {
+          name: person.name,
+          pos: person.pos,
+          teamId,
+          kind,
+          price: kind === "auction" ? null : 0,
+          personId: person.id,
+        });
+        added.push(person.name);
+      }
+    });
+
+    audit(req, "player.create_from_roster", { kind, added: added.length, skipped: skipped.length });
+    const data = loadTournament(req.tournament.id);
+    broadcast(req.tournament.id, "changed", { reason: "players" });
+    res.json({ tournament: data, added, skipped });
+  }),
+);
+
 tournamentRoutes.patch(
   "/:tid/players/:playerId",
   requireTournament("admin"),
@@ -377,6 +495,29 @@ tournamentRoutes.delete(
   }),
 );
 
+/**
+ * Say which roster person a tournament player is — or `personId: null` to
+ * unlink. This is what puts a face on the player and carries their goals into
+ * their career. Suggestions are made in the browser; a person only ever gets
+ * linked by somebody choosing them.
+ */
+tournamentRoutes.post(
+  "/:tid/players/:playerId/person",
+  requireTournament("admin"),
+  route(async (req, res) => {
+    const player = getPlayer(req.params.playerId);
+    if (!player || player.tournament_id !== req.tournament.id) throw notFoundError("No such player in this tournament.");
+
+    const personId = req.body?.personId ? String(req.body.personId) : null;
+    const person = personId ? getPerson(personId) : null;
+    if (personId && !person) throw notFoundError("No such person on the roster.");
+
+    linkPlayer(player.id, personId);
+    audit(req, "player.link", { player: player.name, person: person?.name ?? null });
+    touched(req, res, "players");
+  }),
+);
+
 /* ---------------------------------------------------------------- auction */
 
 tournamentRoutes.post(
@@ -393,12 +534,36 @@ tournamentRoutes.post(
     if (!check.ok) throw badRequest(check.error);
 
     setPlayerTeam(playerId, teamId, price);
+    // Sold, so off the block.
+    if (D.getSettings(data).auctionOnBlock === playerId) patchSettings(req.tournament.id, { auctionOnBlock: null });
     audit(req, "auction.sell", {
       player: data.players[playerId]?.name,
       team: data.teams[teamId]?.name,
       price,
     });
-    touched(req, res, "auction", { playerId, teamId });
+    touched(req, res, "auction", { playerId, teamId, price });
+  }),
+);
+
+/**
+ * Put a player "on the block" — the one being bid for now — or clear it with
+ * `playerId: null`. The projector screen shows whoever is on the block, so the
+ * room sees the face and the record while the bidding happens.
+ */
+tournamentRoutes.post(
+  "/:tid/auction/block",
+  requireTournament("admin"),
+  route(async (req, res) => {
+    const data = loadTournament(req.tournament.id);
+    const playerId = req.body?.playerId ? String(req.body.playerId) : null;
+    if (playerId) {
+      const player = data.players[playerId];
+      if (!player || !D.isAuctionPlayer(player)) throw notFoundError("No such player in the auction pool.");
+      if (player.teamId) throw badRequest(`${player.name} has already been sold.`);
+    }
+    patchSettings(req.tournament.id, { auctionOnBlock: playerId, auctionOnBlockAt: playerId ? Date.now() : null });
+    audit(req, "auction.block", { player: playerId ? data.players[playerId].name : null });
+    touched(req, res, "auction", { onBlock: playerId });
   }),
 );
 

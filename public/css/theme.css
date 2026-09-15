@@ -46,40 +46,70 @@
 }
 
 /* ---- Tokens --------------------------------------------------------------
-   Greens/orange sampled from logo.png; surfaces + mint/gold from the deck.   */
+   Brand colours come from the WeGro Technologies logo: deep green #045647
+   ("WE" and the leaf) and orange #f15d2c ("GRO"). The site is dark, so the
+   surfaces are built from that green, orange is the colour of action, and mint
+   stays the colour of data — positive numbers, links, highlights.
+
+   Change a colour here and it changes everywhere.                            */
 :root {
-  --wg-green: #00a950;
-  --wg-green-dk: #007a3a;
-  --wg-orange: #f5831f;
+  --brand-green: #045647;
+  --brand-orange: #f15d2c;
+  --brand-orange-hi: #ff7a4d;
 
-  --bg: #062e2a;
-  --bg-2: #04211e;
-  --surface: #0b3b36;
-  --surface-2: #0f4a43;
-  --surface-3: #14574f;
+  /* Kept under their old names: public.css and admin.css read these. */
+  --wg-green: #0f9d6b;
+  --wg-green-dk: #045647;
+  --wg-orange: var(--brand-orange);
 
-  --mint: #3fd9a4;
+  --bg: #03201c;
+  --bg-2: #021815;
+  --surface: #072f2a;
+  --surface-2: #0b3a34;
+  --surface-3: #10473f;
+  --glass: rgba(10, 58, 52, 0.62);
+
+  --mint: #46dcaa;
   --mint-dim: #2bb287;
-  --gold: #e8c35c;
-  --flame: #f2622a;
+  --gold: #f0c65a;
+  --flame: #ff6a3d;
   --danger: #ef5a5a;
 
-  --text: #eaf6f2;
-  --muted: #8fb3ac;
-  --faint: #6d938c;
+  --text: #eef8f4;
+  --muted: #9dbfb7;
+  --faint: #739a92;
+  --on-orange: #1d0a03;
 
-  --line: rgba(255, 255, 255, 0.09);
+  --line: rgba(255, 255, 255, 0.08);
   --line-strong: rgba(255, 255, 255, 0.16);
+  --highlight: inset 0 1px 0 rgba(255, 255, 255, 0.06);
 
-  --radius: 16px;
-  --radius-sm: 10px;
+  --radius: 18px;
+  --radius-sm: 12px;
   --radius-pill: 999px;
-  --shadow: 0 10px 30px rgba(0, 0, 0, 0.35);
-  --shadow-lg: 0 20px 50px rgba(0, 0, 0, 0.45);
+  --shadow: 0 12px 32px rgba(0, 0, 0, 0.28);
+  --shadow-lg: 0 24px 60px rgba(0, 0, 0, 0.45);
 
-  --gap: 14px;
-  --gap-lg: 22px;
+  /* 8px rhythm. */
+  --space-1: 4px;
+  --space-2: 8px;
+  --space-3: 12px;
+  --space-4: 16px;
+  --space-5: 24px;
+  --space-6: 32px;
+  --space-7: 48px;
+  --gap: var(--space-4);
+  --gap-lg: var(--space-5);
   --maxw: 1180px;
+  --tap: 44px;
+
+  /* One set of motion values, so everything moves alike — and the media query
+     at the bottom of this file turns all of it off. */
+  --ease-out: cubic-bezier(0.2, 0.8, 0.2, 1);
+  --ease-spring: cubic-bezier(0.2, 0.9, 0.3, 1.25);
+  --dur-fast: 0.15s;
+  --dur: 0.28s;
+  --dur-slow: 0.6s;
 
   --font: "Inter", ui-sans-serif, -apple-system, "Segoe UI", Roboto, Arial,
     "Noto Sans", sans-serif;
@@ -110,8 +140,8 @@ body {
   line-height: 1.55;
   color: var(--text);
   background:
-    radial-gradient(900px 620px at 8% -8%, rgba(0, 169, 80, 0.16), transparent 65%),
-    radial-gradient(820px 560px at 104% 4%, rgba(63, 217, 164, 0.11), transparent 62%),
+    radial-gradient(1000px 640px at 6% -10%, rgba(4, 86, 71, 0.55), transparent 65%),
+    radial-gradient(760px 520px at 108% 0%, rgba(241, 93, 44, 0.08), transparent 60%),
     var(--bg);
   background-attachment: fixed;
   -webkit-font-smoothing: antialiased;
@@ -145,7 +175,7 @@ textarea {
   color: inherit;
 }
 :focus-visible {
-  outline: 2px solid var(--mint);
+  outline: 2px solid var(--brand-orange-hi);
   outline-offset: 2px;
   border-radius: 6px;
 }
@@ -186,24 +216,30 @@ textarea {
 
 /* ---- Card ----------------------------------------------------------------- */
 .card {
-  background: linear-gradient(180deg, var(--surface), rgba(11, 59, 54, 0.72));
+  background: linear-gradient(180deg, var(--surface-2), var(--glass));
   border: 1px solid var(--line);
   border-radius: var(--radius);
-  padding: 16px;
-  box-shadow: var(--shadow);
+  padding: var(--space-5) var(--space-4);
+  box-shadow: var(--highlight), var(--shadow);
+}
+@media (min-width: 720px) {
+  .card {
+    padding: var(--space-5);
+  }
 }
 .card--flat {
   background: var(--surface);
-  box-shadow: none;
+  box-shadow: var(--highlight);
 }
+/* Sentence case in the text colour. The old all-caps mint titles made every
+   card shout at the same volume, so nothing stood out. */
 .card__title {
   font-family: var(--font-display);
-  font-size: 15px;
+  font-size: 18px;
   font-weight: 800;
-  letter-spacing: 0.04em;
-  text-transform: uppercase;
-  color: var(--mint);
-  margin: 0 0 12px;
+  letter-spacing: -0.01em;
+  color: var(--text);
+  margin: 0 0 var(--space-3);
 }
 .hr {
   height: 1px;
@@ -325,7 +361,8 @@ textarea {
   align-items: center;
   justify-content: center;
   gap: 8px;
-  padding: 10px 16px;
+  min-height: var(--tap);
+  padding: 10px 18px;
   border-radius: var(--radius-sm);
   border: 1px solid var(--line-strong);
   background: var(--surface-2);
@@ -334,7 +371,8 @@ textarea {
   font-size: 14px;
   cursor: pointer;
   white-space: nowrap;
-  transition: transform 0.12s ease, background 0.15s ease, opacity 0.15s ease;
+  transition: transform var(--dur-fast) ease, background var(--dur-fast) ease,
+    opacity var(--dur-fast) ease, filter var(--dur-fast) ease;
   -webkit-tap-highlight-color: transparent;
 }
 .btn:hover:not(:disabled) {
@@ -347,15 +385,18 @@ textarea {
   opacity: 0.42;
   cursor: not-allowed;
 }
+/* Orange is the colour of action. Dark text on it, because white on this
+   orange falls short of readable contrast. */
 .btn--primary {
-  background: linear-gradient(135deg, var(--wg-green), var(--mint-dim));
+  background: linear-gradient(135deg, var(--brand-orange-hi), var(--brand-orange));
   border-color: transparent;
-  color: #04231d;
+  color: var(--on-orange);
   font-weight: 700;
+  box-shadow: 0 6px 18px rgba(241, 93, 44, 0.28);
 }
 .btn--primary:hover:not(:disabled) {
-  filter: brightness(1.08);
-  background: linear-gradient(135deg, var(--wg-green), var(--mint-dim));
+  filter: brightness(1.06);
+  background: linear-gradient(135deg, var(--brand-orange-hi), var(--brand-orange));
 }
 .btn--orange {
   background: linear-gradient(135deg, var(--wg-orange), var(--flame));
@@ -379,9 +420,10 @@ textarea {
   background: rgba(239, 90, 90, 0.24);
 }
 .btn--sm {
-  padding: 6px 11px;
+  min-height: 36px;
+  padding: 6px 12px;
   font-size: 13px;
-  border-radius: 8px;
+  border-radius: 10px;
 }
 .btn--block {
   width: 100%;
@@ -403,6 +445,7 @@ textarea {
 select.input,
 textarea.input {
   width: 100%;
+  min-height: var(--tap);
   padding: 10px 12px;
   border-radius: var(--radius-sm);
   border: 1px solid var(--line-strong);
@@ -504,7 +547,8 @@ table.tbl tbody tr:hover td {
 }
 .tab {
   flex: 0 0 auto;
-  padding: 9px 15px;
+  min-height: 40px;
+  padding: 9px 16px;
   border-radius: var(--radius-pill);
   border: 1px solid var(--line);
   background: rgba(255, 255, 255, 0.04);
@@ -513,17 +557,31 @@ table.tbl tbody tr:hover td {
   font-weight: 600;
   cursor: pointer;
   white-space: nowrap;
-  transition: all 0.15s ease;
+  transition: background var(--dur-fast) ease, color var(--dur-fast) ease;
 }
 .tab:hover {
   color: var(--text);
   background: rgba(255, 255, 255, 0.08);
 }
 .tab[aria-selected="true"] {
-  background: linear-gradient(135deg, var(--wg-green), var(--mint-dim));
+  background: var(--text);
   border-color: transparent;
-  color: #04231d;
+  color: var(--bg);
   font-weight: 700;
+}
+/* ui.js sets these when the strip is wider than the screen, so a phone shows
+   there are more tabs to the side instead of silently cutting one in half. */
+.fade-right {
+  -webkit-mask-image: linear-gradient(90deg, #000 82%, transparent);
+  mask-image: linear-gradient(90deg, #000 82%, transparent);
+}
+.fade-left {
+  -webkit-mask-image: linear-gradient(90deg, transparent, #000 18%);
+  mask-image: linear-gradient(90deg, transparent, #000 18%);
+}
+.fade-left.fade-right {
+  -webkit-mask-image: linear-gradient(90deg, transparent, #000 18%, #000 82%, transparent);
+  mask-image: linear-gradient(90deg, transparent, #000 18%, #000 82%, transparent);
 }
 .panel[hidden] {
   display: none;
