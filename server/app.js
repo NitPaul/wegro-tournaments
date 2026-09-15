@@ -16,6 +16,7 @@ import { attachUser } from "./auth/middleware.js";
 import { parseCookies } from "./http/cookies.js";
 import { notFound, errorHandler } from "./http/errors.js";
 import { mountRoutes } from "./routes/index.js";
+import { mountPages } from "./pages.js";
 import { PHOTO_DIR, PHOTO_URL, ensurePhotoDir, isPhotoName } from "./photos.js";
 
 const here = path.dirname(fileURLToPath(import.meta.url));
@@ -143,7 +144,10 @@ export function createApp() {
       res.status(err.status === 404 || err.code === "ENOENT" ? 404 : 500).end();
     },
   );
-  app.use(express.static(path.join(root, "public"), { ...staticOptions, extensions: ["html"] }));
+  mountPages(app, path.join(root, "public"));
+  // Everything else in public/ — scripts, styles, images. No `index` and no
+  // `.html` guessing: pages are served by mountPages, at their clean addresses.
+  app.use(express.static(path.join(root, "public"), { ...staticOptions, index: false }));
 
   app.use(notFound);
   app.use(errorHandler);

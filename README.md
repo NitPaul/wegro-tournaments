@@ -34,7 +34,8 @@ All three are fixed here, and the first two could not have been fixed in place.
 
 | | |
 |---|---|
-| **Many tournaments** | Create as many as you like. The public site opens the active one; `?t=<slug>` opens any other, so last season's scoreboard stays a working link. |
+| **Landing page** | `/` shows every tournament — live, coming soon (even before it has a date or venue), and finished — with the top players and the latest champion. Each tournament has its own address, `/t/<slug>`; old `/?t=<slug>` links redirect there. |
+| **Many tournaments** | Create as many as you like. Publishing one puts it on the landing page as "coming soon"; it turns live by itself when the first match starts. |
 | **Real roles** | Super admin → tournament admin → referee, checked on the server on every request. |
 | **Accounts with a User ID** | The super admin creates each account — a User ID and a password — and hands it over. No sign-up form, no approval queue. |
 | **One tournament per admin** | An admin or referee account belongs to a single tournament and cannot see or change any other. Each tournament has a permanent code (`WGT-7F4C2A`) the super admin can follow even after its admin renames it. |

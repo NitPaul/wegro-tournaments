@@ -18,6 +18,7 @@ import { tournamentRoutes } from "./tournaments.js";
 import { transferRoutes } from "./transfer.js";
 import { userRoutes } from "./users.js";
 import { pruneExpiredSessions } from "../auth/session.js";
+import { siteTotals } from "../roster.js";
 import { streamStats } from "../stream/sse.js";
 
 export function mountRoutes(app) {
@@ -25,6 +26,11 @@ export function mountRoutes(app) {
 
   api.get("/health", (req, res) => {
     res.json({ ok: true, streams: streamStats() });
+  });
+
+  // The landing page's headline numbers. Cached with the roster, so cheap.
+  api.get("/site", (req, res) => {
+    res.json({ totals: siteTotals() });
   });
 
   api.use("/auth", authRoutes);

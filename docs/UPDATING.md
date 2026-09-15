@@ -97,8 +97,11 @@ with the reason. Write them so they can only run once.
 | A scoring rule, a tiebreak, an auction guard | `shared/domain/` |
 | What an endpoint does, or who may call it | `server/routes/` |
 | A SQL query | `server/db/repo/` |
-| The public scoreboard | `public/js/public.js`, `public/index.html` |
-| The admin console | `public/js/admin.js`, `public/admin.html` |
+| The landing page | `public/index.html`, `public/js/landing.js`, `public/css/landing.css` |
+| A tournament's scoreboard (`/t/<slug>`) | `public/tournament.html`, `public/js/tournament.js` |
+| The player list and profiles | `public/players.html`, `public/js/players.js`, `public/js/player-card.js`, `public/css/players.css` |
+| Which address serves which page | `server/pages.js` |
+| The admin console | `public/js/admin.js`, `public/admin.html`, and `public/js/admin/` for Tournaments, Accounts and Players |
 | The Hall of Fame | `public/js/halloffame.js` |
 | Colours, spacing, anything visual | `public/css/theme.css` first — it is all tokens |
 

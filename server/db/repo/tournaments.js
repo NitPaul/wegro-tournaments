@@ -169,7 +169,9 @@ export function listTournaments({ status = null, includeDrafts = true } = {}) {
   const sql = `SELECT t.*,
                       (SELECT COUNT(*) FROM teams   WHERE tournament_id = t.id) AS team_count,
                       (SELECT COUNT(*) FROM players WHERE tournament_id = t.id) AS player_count,
-                      (SELECT COUNT(*) FROM matches WHERE tournament_id = t.id) AS match_count
+                      (SELECT COUNT(*) FROM matches WHERE tournament_id = t.id) AS match_count,
+                      (SELECT COUNT(*) FROM matches WHERE tournament_id = t.id AND status = 'live') AS live_count,
+                      (SELECT COUNT(*) FROM matches WHERE tournament_id = t.id AND status = 'ft') AS played_count
                  FROM tournaments t
                 ${where.length ? `WHERE ${where.join(" AND ")}` : ""}
                 ORDER BY COALESCE(t.starts_on, '') DESC, t.created_at DESC`;
@@ -192,6 +194,9 @@ export function listTournaments({ status = null, includeDrafts = true } = {}) {
       teamCount: r.team_count,
       playerCount: r.player_count,
       matchCount: r.match_count,
+      // What shared/domain/phase.js needs to tell "coming soon" from "live".
+      liveMatches: r.live_count,
+      playedMatches: r.played_count,
     }));
 }
 

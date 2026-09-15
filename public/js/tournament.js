@@ -1,5 +1,6 @@
 /**
- * The public scoreboard. Read-only: this file never writes anything.
+ * One tournament's public scoreboard, at /t/<slug>. Read-only: this file never
+ * writes anything.
  *
  * Every number on the page is computed from the tournament document by
  * shared/domain/ — the same code the server validates with. There is no
@@ -8,7 +9,7 @@
 
 import * as D from "/shared/domain/index.js";
 import { $, setHTML, show, rememberTab, wireScrollFade, wireSiteHeader, wireTabs } from "./ui.js";
-import { serverNow, syncClock, tournaments, watchTournament } from "./api.js";
+import { serverNow, syncClock, watchTournament } from "./api.js";
 
 const e = D.escapeHtml;
 
@@ -24,37 +25,15 @@ async function init() {
   wireSiteHeader();
   await syncClock();
 
-  let list;
-  try {
-    list = await tournaments.list();
-  } catch (err) {
-    return fail(err.message);
+  // /t/<slug>. The server redirects the old /?t=<slug> links here, but a page
+  // opened from a cached copy of the old site may still carry ?t=, so read both.
+  const slug = decodeURIComponent(location.pathname.split("/")[2] ?? "") || new URLSearchParams(location.search).get("t");
+  if (!slug) {
+    location.replace("/");
+    return;
   }
 
-  if (!list.tournaments.length) {
-    show($("#loading"), false);
-    return show($("#noTournaments"), true);
-  }
-
-  const picker = $("#pickTournament");
-  setHTML(
-    picker,
-    list.tournaments
-      .map((t) => `<option value="${e(t.slug)}">${e(t.name)}${t.season ? ` ${e(t.season)}` : ""}</option>`)
-      .join(""),
-  );
-  show(picker, list.tournaments.length > 1);
-
-  // ?t=<slug> opens any tournament; without it you get the active one. That is
-  // what makes last season's scoreboard a permanent link rather than something
-  // that quietly turns into this season's.
-  const wanted = new URLSearchParams(location.search).get("t") || list.defaultSlug || list.tournaments[0].slug;
-  picker.value = wanted;
-  picker.addEventListener("change", () => {
-    location.search = `?t=${encodeURIComponent(picker.value)}`;
-  });
-
-  open(wanted);
+  open(slug);
 
   // `wireTabs` fires onChange synchronously while selecting the initial tab,
   // which is before `rememberTab` has returned its writer. Declaring the
@@ -77,13 +56,17 @@ function open(slug) {
       lastUpdate = serverNow();
       render();
     },
-    (err) => fail(err.message),
+    (err) => fail(err.message, err),
   );
 }
 
-function fail(message) {
+function fail(message, err) {
   show($("#loading"), false);
   show($("#content"), false);
+  if (err?.status === 404) {
+    document.title = "Not found — WeGro Tournaments";
+    return show($("#notFound"), true);
+  }
   $("#offlineWhy").textContent = message || "Check your connection and refresh.";
   show($("#offline"), true);
 }
@@ -166,13 +149,32 @@ function paintBanners() {
 function paintCaptains() {
   const rows = D.teamsList(data).map((t) => {
     const captain = D.teamCaptain(data, t.id);
-    return `<div class="stat-row">
-      <span class="jersey-dot" style="background:${e(t.jerseyColor || "#888")}"></span>
-      <b>${e(t.name)}</b>
-      <span class="muted">${captain ? e(captain.name) : "No captain yet"}</span>
+    return `<div class="captain-row">
+      ${face(captain, "face")}
+      <span class="captain-row__text">
+        <b>${e(t.name)}</b>
+        <span class="muted">${captain ? personLink(captain) : "No captain yet"}</span>
+      </span>
+      <span class="jersey-dot" style="background:${e(t.jerseyColor || "#888")}" title="Jersey"></span>
     </div>`;
   });
   setHTML($("#captains"), rows.join("") || `<p class="faint">No teams yet.</p>`);
+}
+
+/** A player's photo, or their initials. */
+function face(player, className) {
+  if (player?.photo) return `<img class="${className}" src="${e(player.photo)}" alt="" loading="lazy" width="48" height="48" />`;
+  // Letters only, so "Mehedi (ops)" is "MO" rather than "M(".
+  const words = String(player?.name ?? "").replace(/[^\p{L}\s]/gu, " ").trim().split(" ").filter(Boolean);
+  const letters = ((words[0]?.[0] ?? "") + (words.length > 1 ? words[words.length - 1][0] : "")).toUpperCase();
+  return `<span class="${className} face--empty" aria-hidden="true">${e(letters || "?")}</span>`;
+}
+
+/** A player's name, linking to their record when they are on the roster. */
+function personLink(player) {
+  return player.personId
+    ? `<a class="person-link" href="/players/${encodeURIComponent(player.personId)}">${e(player.name)}</a>`
+    : e(player.name);
 }
 
 function paintNextUp() {
@@ -279,7 +281,7 @@ function paintSquads() {
     const guests = D.teamGuests(data, t.id);
 
     const line = (p, extra = "") =>
-      `<li><span class="pos">${e(p.pos)}</span> ${e(p.name)} ${extra}</li>`;
+      `<li>${face(p, "face face--sm")}<span class="pos">${e(p.pos)}</span> <span class="grow">${personLink(p)}</span> ${extra}</li>`;
 
     return `<div class="card squad">
       <h3 class="card__title">

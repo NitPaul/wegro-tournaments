@@ -53,7 +53,18 @@ function compute() {
     };
   });
 
-  return { people, byId: new Map(people.map((p) => [p.id, p])) };
+  // The headline numbers on the landing page, from the same pass.
+  const totals = {
+    tournaments: tournaments.length,
+    matches: tournaments.reduce((n, d) => n + Object.values(d.matches).filter((m) => m.status === "ft").length, 0),
+    goals: tournaments.reduce(
+      (n, d) => n + Object.values(d.matches).reduce((g, m) => g + Number(m.homeScore ?? 0) + Number(m.awayScore ?? 0), 0),
+      0,
+    ),
+    players: people.length,
+  };
+
+  return { people, byId: new Map(people.map((p) => [p.id, p])), totals };
 }
 
 function roster() {
@@ -74,6 +85,11 @@ function publicPerson(p, { withNote, withTournaments }) {
     lastTournament: tournaments[0] ? { name: tournaments[0].name, season: tournaments[0].season, team: tournaments[0].team } : null,
     ...(withTournaments ? { tournaments } : {}),
   };
+}
+
+/** Tournaments, matches played, goals and players, for the landing page. */
+export function siteTotals() {
+  return roster().totals;
 }
 
 export function rosterList({ isSuper = false } = {}) {
