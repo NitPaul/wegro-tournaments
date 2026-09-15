@@ -34,7 +34,7 @@ NODE_ENV=production
 PUBLIC_URL=https://tournaments.wegro.global   # must match the real origin
 DOMAIN=tournaments.wegro.global               # used by Caddy
 SESSION_SECRET=<64+ random hex chars>
-SUPER_ADMIN_EMAIL=organiser@example.com    # the person who will run tournaments
+SUPER_ADMIN_USERNAME=organiser               # the User ID the organiser signs in with
 SUPER_ADMIN_PASSWORD=<temporary, removed after first sign-in>
 ```
 
@@ -153,9 +153,8 @@ backup as well.
   SHA-256, so a leaked backup does not hand over live sessions.
 - Roles are enforced server-side on every mutating request
   (`server/auth/middleware.js`), not in the browser.
-- Registration is open by default but grants nothing until a super admin
-  assigns the account to a tournament. Set `ALLOW_REGISTRATION=false` to close
-  it entirely.
+- There is no public sign-up. The super admin creates every account, and an
+  admin or referee account can only ever reach its own tournament.
 - CSP is strict: `script-src 'self'`, no inline scripts anywhere in the app.
 
 ## Before you hand it back

@@ -16,12 +16,13 @@
 import express from "express";
 
 import * as D from "../../shared/domain/index.js";
-import { audit } from "../audit.js";
+import { audit, recentAudit } from "../audit.js";
 import { requireSuper, requireTournament, permissionsFor } from "../auth/middleware.js";
-import { badRequest, forbidden, notFoundError, route } from "../http/errors.js";
+import { badRequest, conflict, forbidden, notFoundError, route } from "../http/errors.js";
 import { broadcast } from "../stream/sse.js";
 import { recomputeArchive, removeArchive } from "../db/repo/archive.js";
 import {
+  assignmentOf,
   assignStaff,
   createTournament,
   defaultTournament,
@@ -32,6 +33,7 @@ import {
   patchMeta,
   patchSettings,
   removeStaff,
+  tournamentOverview,
   updateTournament,
 } from "../db/repo/tournaments.js";
 import {
@@ -124,6 +126,19 @@ tournamentRoutes.post(
   }),
 );
 
+/**
+ * Every tournament with its code, staff, previous names and last activity — the
+ * super admin's monitoring view. Declared before `/:tid` so the word "overview"
+ * is never taken for a tournament id.
+ */
+tournamentRoutes.get(
+  "/overview",
+  requireSuper,
+  route(async (req, res) => {
+    res.json({ tournaments: tournamentOverview() });
+  }),
+);
+
 /* -------------------------------------------------------------- read one */
 
 tournamentRoutes.get(
@@ -145,6 +160,18 @@ tournamentRoutes.patch(
     const patch = {};
     for (const key of ["name", "season", "startsOn"]) {
       if (req.body?.[key] !== undefined) patch[key] = req.body[key];
+    }
+    if (patch.name !== undefined) {
+      patch.name = String(patch.name).trim();
+      if (!patch.name) throw badRequest("A tournament needs a name.");
+      if (patch.name.length > 80) throw badRequest("That name is too long — 80 characters at most.");
+    }
+    if (patch.season !== undefined) patch.season = String(patch.season ?? "").trim().slice(0, 20);
+    if (patch.startsOn !== undefined) {
+      patch.startsOn = patch.startsOn || null;
+      if (patch.startsOn && !/^\d{4}-\d{2}-\d{2}$/.test(patch.startsOn)) {
+        throw badRequest("The start date should look like 2027-03-14, or be left empty.");
+      }
     }
 
     // Status and format change what a tournament IS, so they are the super
@@ -168,7 +195,9 @@ tournamentRoutes.patch(
     updateTournament(req.tournament.id, patch);
     if (patch.status === "completed") recomputeArchive(req.tournament.id);
 
-    audit(req, "tournament.update", patch);
+    const renamedFrom =
+      patch.name !== undefined && patch.name !== req.tournament.name ? req.tournament.name : undefined;
+    audit(req, "tournament.update", { ...patch, code: req.tournament.code, renamedFrom });
     touched(req, res, "tournament");
   }),
 );
@@ -222,11 +251,24 @@ tournamentRoutes.post(
     const role = String(req.body?.role ?? "");
     if (!["admin", "referee"].includes(role)) throw badRequest("Role must be admin or referee.");
 
-    const user = db.prepare("SELECT id, email FROM users WHERE id = ?").get(userId);
-    if (!user) throw notFoundError("No such person.");
+    const user = db.prepare("SELECT id, username, is_super FROM users WHERE id = ?").get(userId);
+    if (!user) throw notFoundError("No such account.");
+    if (user.is_super === 1) {
+      throw badRequest("A super admin already has every tournament. There is nothing to assign.");
+    }
+
+    // One tournament per account. Changing the role on the same tournament is
+    // fine; moving the account to a second one is not.
+    const current = assignmentOf(userId);
+    if (current && current.id !== req.tournament.id) {
+      throw conflict(
+        `This account already belongs to ${current.code} (${current.name}). ` +
+          "Each admin or referee account is for one tournament — create a separate account for this one.",
+      );
+    }
 
     const staff = assignStaff(req.tournament.id, userId, role, req.user.id);
-    audit(req, "staff.assign", { email: user.email, role });
+    audit(req, "staff.assign", { username: user.username, role, code: req.tournament.code });
     res.json({ staff });
   }),
 );
@@ -235,10 +277,23 @@ tournamentRoutes.delete(
   "/:tid/staff/:userId",
   requireTournament("super"),
   route(async (req, res) => {
-    const user = db.prepare("SELECT email FROM users WHERE id = ?").get(req.params.userId);
+    const user = db.prepare("SELECT username FROM users WHERE id = ?").get(req.params.userId);
     const staff = removeStaff(req.tournament.id, req.params.userId);
-    audit(req, "staff.remove", { email: user?.email ?? req.params.userId });
+    audit(req, "staff.remove", { username: user?.username ?? req.params.userId, code: req.tournament.code });
     res.json({ staff });
+  }),
+);
+
+/**
+ * What has been done to this tournament, newest first. Its own admin can read
+ * it; nobody else's can.
+ */
+tournamentRoutes.get(
+  "/:tid/activity",
+  requireTournament("admin"),
+  route(async (req, res) => {
+    const limit = Math.min(Math.max(Number(req.query.limit) || 100, 1), 500);
+    res.json({ activity: recentAudit({ tournamentId: req.tournament.id, limit }) });
   }),
 );
 

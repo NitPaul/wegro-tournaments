@@ -728,3 +728,223 @@ tr.is-q td {
   gap: var(--gap);
   grid-template-columns: minmax(0, 1fr);
 }
+
+/* --------------------------------------------------------- admin: shared */
+
+.login-logo {
+  height: 36px;
+  width: auto;
+  margin: 0 auto var(--space-2);
+}
+.row--spaced,
+.list-spaced {
+  margin-top: var(--space-3);
+}
+/* A tournament's permanent code. Monospaced so WGT-7F4C2A reads unambiguously. */
+.code-chip {
+  display: inline-flex;
+  align-items: center;
+  padding: 3px 10px;
+  border-radius: var(--radius-pill);
+  background: rgba(241, 93, 44, 0.12);
+  border: 1px solid rgba(241, 93, 44, 0.4);
+  color: var(--brand-orange-hi);
+  font-family: var(--mono);
+  font-size: 12px;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  white-space: nowrap;
+}
+.code-chip:empty {
+  display: none;
+}
+.context-bar__name {
+  flex: 1 1 auto;
+  min-width: 0;
+  font-family: var(--font-display);
+  font-size: 16px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.context-bar .code-chip {
+  margin-right: var(--space-2);
+}
+.on-global-tab .context-bar,
+.on-global-tab .role-note,
+.on-global-tab .readonly-note {
+  display: none !important;
+}
+@media (max-width: 720px) {
+  .context-bar {
+    flex-wrap: wrap;
+    row-gap: var(--space-1);
+  }
+  .context-bar__name {
+    white-space: normal;
+  }
+}
+.form-grid--tight {
+  grid-template-columns: repeat(auto-fit, minmax(min(100%, 190px), 1fr));
+}
+.readonly-note {
+  padding: var(--space-3) var(--space-4);
+  border-radius: var(--radius-sm);
+  background: rgba(240, 198, 90, 0.1);
+  border: 1px solid rgba(240, 198, 90, 0.4);
+  color: var(--gold);
+  font-weight: 600;
+}
+.panel.is-readonly .card {
+  opacity: 0.85;
+}
+.input--search {
+  width: auto;
+  flex: 0 1 260px;
+}
+
+/* A labelled form laid out in columns that collapse to one on a phone. */
+.form-grid {
+  display: grid;
+  gap: var(--space-3) var(--space-4);
+  grid-template-columns: repeat(auto-fit, minmax(min(100%, 230px), 1fr));
+  margin-top: var(--space-2);
+}
+.field > span:first-child {
+  font-size: 12px;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  color: var(--muted);
+}
+.input-with-button {
+  display: flex;
+  gap: var(--space-2);
+}
+.input-with-button .input {
+  flex: 1 1 auto;
+  min-width: 0;
+}
+.form-actions {
+  margin-top: var(--space-4);
+}
+.form-actions .btn {
+  flex: 0 0 auto;
+}
+
+/* What to hand to the person an account was made for. Shown once. */
+.handover {
+  margin-top: var(--space-4);
+  padding: var(--space-4);
+  border-radius: var(--radius-sm);
+  background: rgba(70, 220, 170, 0.08);
+  border: 1px solid rgba(70, 220, 170, 0.35);
+}
+.handover p {
+  margin: 0 0 var(--space-3);
+}
+.handover code {
+  font-size: 15px;
+  color: var(--text);
+  user-select: all;
+}
+
+/* ------------------------------------------------- admin: tournaments list */
+
+.ov {
+  padding: var(--space-4) 0;
+  border-top: 1px solid var(--line);
+}
+.ov:first-child {
+  border-top: 0;
+}
+.ov__head {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--space-2);
+}
+.ov__when {
+  margin-left: auto;
+}
+.ov__name {
+  font-size: 18px;
+  margin: var(--space-2) 0 var(--space-1);
+}
+.ov__was {
+  margin: 0 0 var(--space-1);
+  font-style: italic;
+}
+.ov p {
+  margin: 0 0 var(--space-2);
+}
+.ov__staff {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-2);
+  margin-bottom: var(--space-3);
+}
+.staff-chip {
+  font-size: 13px;
+  padding: 3px 10px;
+  border-radius: var(--radius-pill);
+  background: var(--surface-3);
+  color: var(--muted);
+}
+.staff-chip b {
+  color: var(--text);
+}
+.staff-chip.is-off {
+  text-decoration: line-through;
+  opacity: 0.6;
+}
+.ov .card-buttons .btn {
+  flex: 0 0 auto;
+}
+.ov__activity {
+  margin-top: var(--space-3);
+  padding: var(--space-3);
+  border-radius: var(--radius-sm);
+  background: var(--bg-2);
+  max-height: 320px;
+  overflow-y: auto;
+}
+.activity {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  font-size: 14px;
+}
+.activity li {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0 var(--space-2);
+  padding: 6px 0;
+  border-bottom: 1px solid var(--line);
+}
+.activity li:last-child {
+  border-bottom: 0;
+}
+.activity__when {
+  color: var(--faint);
+  min-width: 88px;
+}
+
+/* ------------------------------------------------------ admin: accounts */
+
+.acct-group + .acct-group {
+  margin-top: var(--space-5);
+}
+.acct-group__title {
+  font-size: 13px;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  color: var(--brand-orange-hi);
+  margin: 0 0 var(--space-1);
+}
+.acct-meta {
+  display: block;
+  font-size: 12px;
+}
+.people-row.is-off {
+  opacity: 0.6;
+}

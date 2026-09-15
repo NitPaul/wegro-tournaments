@@ -110,12 +110,10 @@ export const env = {
    * First-run bootstrap only. Once a super admin exists in the database these
    * are ignored, so leaving them in the environment is harmless but pointless.
    */
+  superAdminUsername: optional("SUPER_ADMIN_USERNAME", ""),
   superAdminEmail: optional("SUPER_ADMIN_EMAIL", ""),
   superAdminPassword: optional("SUPER_ADMIN_PASSWORD", ""),
   superAdminName: optional("SUPER_ADMIN_NAME", "Super Admin"),
-
-  /** Allow public self-registration into the pending queue. */
-  allowRegistration: optional("ALLOW_REGISTRATION", "true") !== "false",
 
   logLevel: optional("LOG_LEVEL", isProduction ? "info" : "debug"),
 };

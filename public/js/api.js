@@ -70,8 +70,8 @@ export const api = {
 
 export const auth = {
   me: () => api.get("/auth/me"),
-  login: (email, password) => api.post("/auth/login", { email, password }),
-  register: (name, email, password) => api.post("/auth/register", { name, email, password }),
+  /** `login` is a User ID, or the email of an account that has one. */
+  login: (login, password) => api.post("/auth/login", { login, password }),
   logout: () => api.post("/auth/logout"),
   changePassword: (currentPassword, newPassword) =>
     api.post("/auth/password", { currentPassword, newPassword }),
@@ -81,6 +81,8 @@ export const auth = {
 
 export const tournaments = {
   list: () => api.get("/tournaments"),
+  overview: () => api.get("/tournaments/overview"),
+  activity: (tid, limit = 100) => api.get(`/tournaments/${encodeURIComponent(tid)}/activity?limit=${limit}`),
   get: (tid) => api.get(`/tournaments/${encodeURIComponent(tid)}`),
   create: (body) => api.post("/tournaments", body),
   update: (tid, body) => api.patch(`/tournaments/${encodeURIComponent(tid)}`, body),
@@ -128,8 +130,9 @@ export const tournaments = {
 };
 
 export const users = {
-  list: (status) => api.get(`/users${status ? `?status=${status}` : ""}`),
+  list: () => api.get("/users"),
   create: (body) => api.post("/users", body),
+  resetPassword: (id, password) => api.post(`/users/${id}/password`, { password }),
   setStatus: (id, status) => api.post(`/users/${id}/status`, { status }),
   setSuper: (id, isSuper) => api.post(`/users/${id}/super`, { isSuper }),
   remove: (id) => api.del(`/users/${id}`),

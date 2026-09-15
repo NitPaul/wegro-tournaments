@@ -30,7 +30,7 @@ and has nothing to do with the server's.
 npm test
 ```
 
-134 tests, about half a second. **Never push with a failing test.** They cover
+The suite takes a couple of seconds. **Never push with a failing test** — CI will refuse to deploy it anyway. They cover
 the things that are expensive to get wrong: standings and tiebreaks, the points
 engine, auction rules, cards and suspensions, and the captain fix.
 

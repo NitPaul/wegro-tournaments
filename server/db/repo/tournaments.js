@@ -11,6 +11,8 @@
  * Nothing above it knows what a table is.
  */
 
+import { randomBytes } from "node:crypto";
+
 import { db, newId, transaction, uniqueSlug } from "../index.js";
 
 const parse = (json, fallback = {}) => {
@@ -122,6 +124,7 @@ export function loadTournament(key) {
 
   return {
     id: row.id,
+    code: row.code,
     slug: row.slug,
     name: row.name,
     season: row.season,
@@ -162,6 +165,7 @@ export function listTournaments({ status = null, includeDrafts = true } = {}) {
     .all(...args)
     .map((r) => ({
       id: r.id,
+      code: r.code,
       slug: r.slug,
       name: r.name,
       season: r.season,
@@ -189,14 +193,32 @@ export function defaultTournament() {
 
 /* ------------------------------------------------------------------ write */
 
+/**
+ * A tournament's permanent code — WGT- and six hex digits.
+ *
+ * The name can be changed by the tournament's own admin, and the slug came from
+ * the original name, so neither reliably identifies a tournament after a rename.
+ * The code does, forever: it is set here once and no route accepts it in an
+ * update. 16.7 million possibilities for a handful of tournaments; the unique
+ * index turns the rare clash into a retry rather than a duplicate.
+ */
+function newTournamentCode() {
+  for (let attempt = 0; attempt < 20; attempt++) {
+    const code = `WGT-${randomBytes(3).toString("hex").toUpperCase()}`;
+    if (!db.prepare("SELECT 1 FROM tournaments WHERE code = ?").get(code)) return code;
+  }
+  throw new Error("Could not find a free tournament code.");
+}
+
 export function createTournament({ name, season, format, startsOn, meta, settings, userId }) {
   const id = newId("tn");
   db.prepare(
-    `INSERT INTO tournaments (id, slug, name, season, format, status, starts_on,
+    `INSERT INTO tournaments (id, code, slug, name, season, format, status, starts_on,
                               venue_json, settings_json, created_by, created_at)
-     VALUES (?, ?, ?, ?, ?, 'draft', ?, ?, ?, ?, ?)`,
+     VALUES (?, ?, ?, ?, ?, ?, 'draft', ?, ?, ?, ?, ?)`,
   ).run(
     id,
+    newTournamentCode(),
     uniqueSlug(`${name}${season ? ` ${season}` : ""}`),
     name,
     season ?? "",
@@ -279,7 +301,7 @@ export function deleteTournament(id) {
 export function listStaff(tournamentId) {
   return db
     .prepare(
-      `SELECT s.role, s.assigned_at, u.id, u.email, u.name, u.status, u.is_super
+      `SELECT s.role, s.assigned_at, u.id, u.username, u.email, u.name, u.status, u.is_super, u.last_seen_at
          FROM tournament_staff s
          JOIN users u ON u.id = s.user_id
         WHERE s.tournament_id = ?
@@ -288,7 +310,9 @@ export function listStaff(tournamentId) {
     .all(tournamentId)
     .map((r) => ({
       userId: r.id,
-      email: r.email,
+      username: r.username,
+      email: r.email ?? null,
+      lastSeenAt: r.last_seen_at,
       name: r.name,
       role: r.role,
       status: r.status,
@@ -297,6 +321,30 @@ export function listStaff(tournamentId) {
     }));
 }
 
+/**
+ * The one tournament an account belongs to, or null.
+ *
+ * One, because an admin or referee account is created for a single tournament
+ * and the unique index on tournament_staff(user_id) holds that to be true.
+ */
+export function assignmentOf(userId) {
+  const row = db
+    .prepare(
+      `SELECT t.id, t.code, t.slug, t.name, t.status, s.role
+         FROM tournament_staff s
+         JOIN tournaments t ON t.id = s.tournament_id
+        WHERE s.user_id = ?`,
+    )
+    .get(userId);
+  return row ? { ...row } : null;
+}
+
+/**
+ * Put an account on a tournament's staff, or change its role there.
+ *
+ * Callers check first that the account does not already belong to a different
+ * tournament; the unique index is the backstop if one forgets.
+ */
 export function assignStaff(tournamentId, userId, role, assignedBy) {
   return transaction(() => {
     db.prepare(
@@ -306,12 +354,6 @@ export function assignStaff(tournamentId, userId, role, assignedBy) {
                                                           assigned_by = excluded.assigned_by,
                                                           assigned_at = excluded.assigned_at`,
     ).run(tournamentId, userId, role, assignedBy ?? null, Date.now());
-
-    // Being given a job is the approval. Otherwise an organiser has to approve
-    // the person and then assign them, and forgetting the first step produces a
-    // referee who can sign in and change nothing, with no clue why.
-    db.prepare("UPDATE users SET status = 'active' WHERE id = ? AND status = 'pending'").run(userId);
-
     return listStaff(tournamentId);
   });
 }
@@ -322,4 +364,30 @@ export function removeStaff(tournamentId, userId) {
     userId,
   );
   return listStaff(tournamentId);
+}
+
+/**
+ * Every tournament at a glance, for the super admin — the monitoring view.
+ *
+ * The code is the stable column: a tournament admin may rename their tournament
+ * whenever they like, so each row also carries the names it has had, read back
+ * from the audit log, and when anybody last did anything to it.
+ */
+export function tournamentOverview() {
+  const lastActivity = db.prepare("SELECT MAX(at) AS at FROM audit_log WHERE tournament_id = ?");
+  const renames = db.prepare(
+    `SELECT detail_json, at FROM audit_log
+      WHERE tournament_id = ? AND action = 'tournament.update' AND detail_json LIKE '%renamedFrom%'
+      ORDER BY at`,
+  );
+
+  return listTournaments().map((t) => ({
+    ...t,
+    staff: listStaff(t.id),
+    lastActivityAt: lastActivity.get(t.id)?.at ?? null,
+    previousNames: renames
+      .all(t.id)
+      .map((r) => parse(r.detail_json).renamedFrom)
+      .filter(Boolean),
+  }));
 }

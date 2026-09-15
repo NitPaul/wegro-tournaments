@@ -130,8 +130,16 @@ Clients hold a connection open, so watch connection count, not request rate.
   login when the cost parameters change.
 - Sessions: random token in an httpOnly cookie; the database stores only its
   SHA-256, so a leaked backup does not hand over live sessions.
-- Registration is open by default but grants nothing — a new account sits at
-  `pending` until a super admin assigns it to a tournament.
+- There is no self-registration. The super admin creates each account with a
+  User ID; an admin or referee account belongs to one tournament, enforced by a
+  unique index on `tournament_staff(user_id)` as well as in the routes.
+- Tournaments carry a permanent `code`. No route accepts it in an update.
+- A finished tournament refuses writes from anyone but the super admin
+  (`requireTournament`, `server/auth/middleware.js`).
+- Schema changes to existing tables live in `server/db/migrations/`. A migration
+  whose first line is `-- foreign_keys: off` runs with foreign keys off (needed
+  to rebuild a table without cascade-deleting its dependents) and is refused if
+  it leaves any new broken reference.
 
 ## Where to be careful
 

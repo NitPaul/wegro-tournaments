@@ -10,7 +10,6 @@
 
 import express from "express";
 
-import { env } from "../env.js";
 import { archiveRoutes } from "./archive.js";
 import { authRoutes } from "./auth.js";
 import { streamRoutes } from "./stream.js";
@@ -24,7 +23,7 @@ export function mountRoutes(app) {
   const api = express.Router();
 
   api.get("/health", (req, res) => {
-    res.json({ ok: true, streams: streamStats(), registration: env.allowRegistration });
+    res.json({ ok: true, streams: streamStats() });
   });
 
   api.use("/auth", authRoutes);

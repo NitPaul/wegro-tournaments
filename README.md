@@ -36,12 +36,13 @@ All three are fixed here, and the first two could not have been fixed in place.
 |---|---|
 | **Many tournaments** | Create as many as you like. The public site opens the active one; `?t=<slug>` opens any other, so last season's scoreboard stays a working link. |
 | **Real roles** | Super admin → tournament admin → referee, checked on the server on every request. |
-| **Self-service sign-up** | People create their own account and land in a pending queue with no access. Assigning them to a tournament approves them. |
+| **Accounts with a User ID** | The super admin creates each account — a User ID and a password — and hands it over. No sign-up form, no approval queue. |
+| **One tournament per admin** | An admin or referee account belongs to a single tournament and cannot see or change any other. Each tournament has a permanent code (`WGT-7F4C2A`) the super admin can follow even after its admin renames it. |
 | **Friendly matches** | A tournament with `format: friendly` — matches and a score, no auction, no table. |
 | **Fouls and cards** | Fouls, yellows and reds. They never move the scoreline. Second-yellow warning, red-card suspensions, a fair-play table. |
 | **Hall of Fame** | Every finished tournament: date, champion, runners-up, final score and all five medals. |
 | **Captains fixed** | Captains are players. Their goals, assists, cards and clean sheets count everywhere. |
-| **Tests** | 141 of them. The old project had none. |
+| **Tests** | Standings, points, medals, the auction, cards, migrations, and who may do what — run before every deploy. The old project had none. |
 | **Docker** | One container, one SQLite file, one command. |
 
 ---
@@ -82,10 +83,16 @@ breaks six months later.
 
 ### First run
 
-Set `SUPER_ADMIN_EMAIL` and `SUPER_ADMIN_PASSWORD` in `.env`. The first boot
+Set `SUPER_ADMIN_USERNAME` and `SUPER_ADMIN_PASSWORD` in `.env`. The first boot
 creates that account, and the path closes afterwards. Remove the password from
-the file once you have signed in. If that address has already registered
-itself, it is promoted rather than failing.
+the file once you have signed in.
+
+Every other account is created by the super admin under **Accounts**: a name,
+a User ID, a password (there is a Generate button), a role, and the tournament
+it is for. The console shows the details to hand over once.
+
+Accounts that existed before User IDs were introduced got one automatically —
+the part of their email before the @ — and can still sign in with their email.
 
 ### On a real server
 
@@ -112,17 +119,32 @@ environments, so a fork of this repo gets you the code and nothing else.
 | | Super admin | Tournament admin | Referee |
 |---|---|---|---|
 | Create / delete tournaments | ✅ | — | — |
-| Assign staff, approve people | ✅ | — | — |
+| Create accounts, reset passwords, switch accounts off | ✅ | — | — |
+| See other tournaments in the console | ✅ | — | — |
+| Rename own tournament, set its date and venue | ✅ | ✅ | — |
+| Change anything once a tournament is **finished** | ✅ | — | — |
 | Teams, captains, players, auction, settings | ✅ | ✅ own tournament | — |
 | Match day: clock, scores, goals, cards | ✅ | ✅ own tournament | ✅ own tournament |
 | Clear scores, reset auction, delete | ✅ | — | — |
 
-Roles are per tournament, so the same person can run one and referee another.
+**An admin or referee account belongs to exactly one tournament.** It is chosen
+when the account is created and cannot be changed; to run a second tournament,
+make a second account. The same person can have two.
+
+Every tournament has a **code** such as `WGT-7F4C2A`. Its admin may rename it;
+the code, and its link, never change. The super admin's **Tournaments** screen
+lists every tournament by code with its current and previous names, its staff,
+and when anyone last did anything — and each has an activity log.
+
+A **finished** tournament is read-only to its admin and referee. The super
+admin can reopen it if a result needs correcting.
 
 **This is enforced in `server/auth/middleware.js`, on the server, on every
-mutating request.** Hiding a tab in the console is only there to keep the screen
-tidy. To satisfy yourself, sign in as the referee, open devtools and POST
-directly to the auction endpoint — you get a 403.
+request.** Hiding a tab in the console is only there to keep the screen tidy.
+`test/api/isolation.test.js` proves it: it reads every route the tournament
+router has and calls each one as another tournament's admin and referee,
+expecting 403. A route added later without a permission check fails that test —
+and the test has to pass before anything deploys.
 
 ---
 
@@ -237,9 +259,10 @@ plain values out.
 npm test
 ```
 
-141 tests covering standings and every tiebreak, the points engine, medals,
+Tests covering standings and every tiebreak, the points engine, medals,
 auction rules including the stranding guard, the clock, cards and suspensions,
-and the Firebase import.
+the Firebase import, the database migrations, and an isolation test that calls
+every tournament route as another tournament's admin and expects to be refused.
 
 `test/domain/captains.test.js` exists specifically so the captain bug cannot come
 back quietly. If somebody ever "optimises" captains back out of the players

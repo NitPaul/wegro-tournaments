@@ -5,9 +5,9 @@
  * being hypothetical. Every mutating request writes one row here — cheap to
  * store, and the only way to answer that question after the fact.
  *
- * The user's email is denormalised into the row on purpose: it must still read
- * correctly after the account has been deleted, which is exactly when someone
- * goes looking.
+ * Who did it is copied into the row as text (User ID, and email where there is
+ * one) on purpose: it must still read correctly after the account has been
+ * deleted, which is exactly when someone goes looking.
  */
 
 import { db } from "./db/index.js";
@@ -15,11 +15,12 @@ import { db } from "./db/index.js";
 export function audit(req, action, detail = {}, tournamentId = null) {
   try {
     db.prepare(
-      `INSERT INTO audit_log (user_id, user_email, tournament_id, action, detail_json, ip, at)
-       VALUES (?, ?, ?, ?, ?, ?, ?)`,
+      `INSERT INTO audit_log (user_id, user_email, username, tournament_id, action, detail_json, ip, at)
+       VALUES (?, ?, ?, ?, ?, ?, ?, ?)`,
     ).run(
       req.user?.id ?? null,
-      req.user?.email ?? "anonymous",
+      req.user?.email ?? "",
+      req.user?.username ?? (req.user ? null : "anonymous"),
       tournamentId ?? req.tournament?.id ?? null,
       action,
       JSON.stringify(detail ?? {}),
@@ -44,7 +45,8 @@ export function recentAudit({ tournamentId = null, limit = 100 } = {}) {
   return rows.map((r) => ({
     id: r.id,
     userId: r.user_id,
-    userEmail: r.user_email,
+    username: r.username ?? null,
+    userEmail: r.user_email || null,
     tournamentId: r.tournament_id,
     action: r.action,
     detail: safeParse(r.detail_json),

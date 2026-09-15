@@ -41,7 +41,7 @@ export function readSession(token) {
   const row = db
     .prepare(
       `SELECT s.id AS session_id, s.expires_at,
-              u.id, u.email, u.name, u.is_super, u.status
+              u.id, u.username, u.email, u.name, u.is_super, u.status
          FROM sessions s
          JOIN users u ON u.id = s.user_id
         WHERE s.id = ?`,
@@ -62,6 +62,7 @@ export function readSession(token) {
   return {
     sessionId: row.session_id,
     id: row.id,
+    username: row.username,
     email: row.email,
     name: row.name,
     isSuper: row.is_super === 1,

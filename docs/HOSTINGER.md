@@ -212,7 +212,8 @@ Then in a browser:
   League 2026
 - `https://tournaments.wegro.global/hall-of-fame` — SHOMOGRO beat LEGACY 2–0
 - `https://tournaments.wegro.global/admin` — sign in with the
-  `SUPER_ADMIN_EMAIL` and `SUPER_ADMIN_PASSWORD` from the `.env`
+  `SUPER_ADMIN_USERNAME` (or the email, for an account created before User
+  IDs) and `SUPER_ADMIN_PASSWORD` from the `.env`
 
 ## 8. Close up
 
