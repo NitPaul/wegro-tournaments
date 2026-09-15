@@ -98,7 +98,7 @@ function render() {
 function paintHero() {
   const meta = D.getMeta(data);
 
-  $("#heroEyebrow").textContent = data.season ? `Season ${data.season}` : "";
+  $("#heroEyebrow").textContent = D.seasonHeading(data.season);
 
   // The stylesheet gives the <span> a gradient fill, so the last word or two of
   // the name is the coloured part — that is where the brand look comes from.
@@ -107,7 +107,17 @@ function paintHero() {
   const tail = words.length > 1 ? words.slice(-2).join(" ") : words[0];
   setHTML($("#heroTitle"), `${e(lead)}${lead ? " " : ""}<span>${e(tail)}</span>`);
 
-  $("#heroSub").textContent = [meta.venueName, meta.dateLabel, meta.timeLabel].filter(Boolean).join(" · ");
+  // Before a finished tournament, say plainly what is not decided yet rather
+  // than leaving a gap where the date should be.
+  const soon = data.status !== "completed";
+  const day = meta.dateLabel || D.formatDay(data.startsOn);
+  $("#heroSub").textContent = [
+    meta.venueName || (soon ? "Venue will be announced soon" : ""),
+    day || (soon ? "Date will be announced soon" : ""),
+    meta.timeLabel,
+  ]
+    .filter(Boolean)
+    .join(" · ");
 
   setHTML(
     $("#heroPills"),
@@ -178,16 +188,21 @@ function personLink(player) {
 }
 
 function paintNextUp() {
-  const next = D.matchesList(data).find((m) => m.status !== "ft");
+  const matches = D.matchesList(data);
+  // No fixtures yet is not the same as all of them played.
+  if (!matches.length) return setHTML($("#nextUp"), `<p class="faint">Fixtures will be announced soon.</p>`);
+  const next = matches.find((m) => m.status !== "ft");
   if (!next) return setHTML($("#nextUp"), `<p class="faint">Every match has been played.</p>`);
   setHTML($("#nextUp"), matchRow(next, { plain: true }));
 }
 
 function paintVenue() {
   const meta = D.getMeta(data);
+  const soon = data.status !== "completed";
+  const when = [meta.dateLabel || D.formatDay(data.startsOn), meta.timeLabel].filter(Boolean).join(" · ");
   const rows = [
-    ["Where", meta.venueName],
-    ["When", [meta.dateLabel, meta.timeLabel].filter(Boolean).join(" · ")],
+    ["Where", meta.venueName || (soon ? D.ANNOUNCED_SOON : "")],
+    ["When", when || (soon ? D.ANNOUNCED_SOON : "")],
     ["Auction", meta.auctionLabel],
   ].filter(([, v]) => v);
 

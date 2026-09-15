@@ -1581,3 +1581,10 @@ select.input.input--sm {
   background: var(--text);
   color: var(--bg);
 }
+
+/* Season: a month and a year side by side. */
+.season-pick {
+  display: grid;
+  grid-template-columns: minmax(0, 1.4fr) minmax(90px, 1fr);
+  gap: var(--space-2);
+}

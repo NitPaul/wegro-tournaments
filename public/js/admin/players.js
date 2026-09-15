@@ -233,10 +233,10 @@ function openEditor(person) {
 
   setHTML(
     dialog,
-    `<form method="dialog" class="dialog__panel person-editor">
+    `<form class="dialog__panel person-editor" id="personForm" novalidate>
       <header class="dialog__head">
         <h2>${creating ? "Add a player" : e(person.name)}</h2>
-        <button class="btn btn--ghost btn--sm" value="cancel" type="submit" aria-label="Close">Close</button>
+        <button class="btn btn--ghost btn--sm" type="button" id="pClose">Close</button>
       </header>
 
       <div class="person-editor__photo">
@@ -293,6 +293,22 @@ function openEditor(person) {
     editor?.destroy();
     bitmap?.close?.();
     dialog.close();
+  };
+
+  // Close is an ordinary button, not a form submit. As a submit it made the
+  // browser check the form first, and an empty name blocked closing with
+  // "Please fill in this field" — the opposite of what Close is for.
+  $("#pClose", dialog).addEventListener("click", close);
+  // Enter in a field saves, rather than submitting the form and closing.
+  $("#personForm", dialog).addEventListener("submit", (ev) => {
+    ev.preventDefault();
+    $("#pSave", dialog).click();
+  });
+  // Escape closes the dialog natively; tidy up the photo editor either way.
+  // Assigned, not added, because the same <dialog> is reused for every player.
+  dialog.onclose = () => {
+    editor?.destroy();
+    bitmap?.close?.();
   };
 
   if (isSuper) {
