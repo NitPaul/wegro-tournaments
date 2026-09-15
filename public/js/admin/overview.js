@@ -82,14 +82,20 @@ export function wireOverview({ open, refresh }) {
       const name = $("#newTournamentName").value.trim();
       if (!name) return toast("Give the tournament a name. Everything else can wait.", "err");
       try {
+        const year = $("#newTournamentYear").value.trim();
+        const month = $("#newTournamentMonth").value;
+        if (month && !/^\d{4}$/.test(year)) {
+          return toast("Add the year for the month — for example September 2026.", "err");
+        }
         const { tournament } = await tournaments.create({
           name,
-          season: $("#newTournamentSeason").value.trim(),
+          season: D.seasonLabel(month, year),
           format: $("#newTournamentFormat").value,
           startsOn: $("#newTournamentDate").value || null,
         });
         $("#newTournamentName").value = "";
-        $("#newTournamentSeason").value = "";
+        $("#newTournamentMonth").value = "";
+        $("#newTournamentYear").value = "";
         $("#newTournamentDate").value = "";
         toast(`${tournament.name} created — code ${tournament.code}.`);
         await refresh();
@@ -169,7 +175,7 @@ function paint() {
           </div>
           <h3 class="ov__name">${e(t.name)}${t.season ? ` <span class="faint">${e(t.season)}</span>` : ""}</h3>
           ${t.previousNames.length ? `<p class="faint ov__was">Previously ${t.previousNames.map((n) => `“${e(n)}”`).join(", ")}</p>` : ""}
-          <p class="faint">${e(t.format === "friendly" ? "Friendly" : "League")} · ${t.teamCount} teams · ${t.playerCount} players · ${t.matchCount} matches${t.startsOn ? ` · starts ${e(t.startsOn)}` : " · no date yet"}</p>
+          <p class="faint">${e(t.format === "friendly" ? "Friendly" : "League")} · ${t.teamCount} teams · ${t.playerCount} players · ${t.matchCount} matches${t.startsOn ? ` · starts ${e(D.formatDay(t.startsOn))}` : " · date will be announced soon"}</p>
           <div class="ov__staff">${staff}</div>
           <div class="card-buttons">
             <button class="btn btn--sm btn--primary" data-open="${e(t.id)}" type="button">Open</button>

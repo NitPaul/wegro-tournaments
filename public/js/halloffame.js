@@ -53,7 +53,7 @@ async function load() {
 function paintTree(entries) {
   const years = new Map();
   for (const x of entries) {
-    const year = (x.startsOn || "").slice(0, 4) || x.season || "Undated";
+    const year = (x.startsOn || "").slice(0, 4) || String(D.seasonYear(x.season) ?? "") || "Undated";
     if (!years.has(year)) years.set(year, []);
     years.get(year).push(x);
   }

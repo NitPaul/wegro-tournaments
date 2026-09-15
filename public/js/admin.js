@@ -472,6 +472,20 @@ function renderSettings() {
        <input class="input" data-setting="${e(id)}" type="${type}" value="${e(value ?? "")}" /></label>`;
 
   $("#detailsCode").textContent = data.code ?? "";
+  // Season as a month and a year ("September 2026"). A season written some other
+  // way before this existed is kept, and shown, until someone picks a month or year.
+  const seasonDetail = (season) => {
+    const { month, year } = D.parseSeason(season);
+    const custom = season && !year ? `<small class="faint">Currently “${e(season)}”</small>` : "";
+    return `<div class="field"><span>Season</span>
+      <span class="season-pick">
+        <select class="input" data-season-part="month" aria-label="Month">
+          <option value="">No month</option>
+          ${D.MONTHS.map((m, i) => `<option value="${i + 1}"${month === i + 1 ? " selected" : ""}>${m}</option>`).join("")}
+        </select>
+        <input class="input" data-season-part="year" type="number" inputmode="numeric" min="2000" max="2100" placeholder="Year" value="${year ?? ""}" aria-label="Year" />
+      </span>${custom}</div>`;
+  };
   const detail = (key, label, value, type = "text", extra = "") =>
     `<label class="field"><span>${e(label)}</span>
        <input class="input" data-detail="${e(key)}" type="${type}" value="${e(value ?? "")}" ${extra} /></label>`;
@@ -479,7 +493,7 @@ function renderSettings() {
     $("#detailsGrid"),
     [
       detail("name", "Name", data.name, "text", 'maxlength="80" required'),
-      detail("season", "Season", data.season, "text", 'maxlength="20"'),
+      seasonDetail(data.season),
       detail("startsOn", "Start date (leave empty if not decided)", data.startsOn, "date"),
     ].join(""),
   );
@@ -740,6 +754,20 @@ function wireConsole() {
 
   // Name, season and start date — the tournament's own admin may change these.
   $("#detailsGrid").addEventListener("change", async (ev) => {
+    const part = ev.target.closest("[data-season-part]");
+    if (part && data) {
+      const month = $('#detailsGrid [data-season-part="month"]').value;
+      const year = $('#detailsGrid [data-season-part="year"]').value.trim();
+      if (month && !/^\d{4}$/.test(year)) return toast("Add the year as well — for example September 2026.", "err");
+      try {
+        await tournaments.update(data.id, { season: D.seasonLabel(month, year) });
+        toast("Saved.");
+      } catch (err) {
+        toast(err.message, "err");
+      }
+      return;
+    }
+
     const el = ev.target.closest("[data-detail]");
     if (!el || !data) return;
     const key = el.dataset.detail;

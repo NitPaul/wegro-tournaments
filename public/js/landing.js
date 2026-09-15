@@ -94,13 +94,13 @@ function tournamentCard(t, hof, index) {
     </span>
     <span class="tcard__name">${e(t.name)}</span>
     <span class="tcard__facts">
-      <span class="tcard__fact"><span aria-hidden="true">📅</span> ${day ? e(day) : `<i>Date to be announced</i>`}</span>
-      <span class="tcard__fact"><span aria-hidden="true">📍</span> ${venue ? e(venue) : `<i>Venue to be announced</i>`}</span>
+      <span class="tcard__fact"><span aria-hidden="true">📅</span> ${day ? e(day) : `<i>Date will be announced soon</i>`}</span>
+      <span class="tcard__fact"><span aria-hidden="true">📍</span> ${venue ? e(venue) : `<i>Venue will be announced soon</i>`}</span>
     </span>
     ${
       phase === "finished" && hof?.champion
         ? `<span class="tcard__champion"><span aria-hidden="true">🏆</span> <b>${e(hof.champion)}</b>${hof.runnerUp ? ` <span class="faint">beat ${e(hof.runnerUp)}${hof.finalScore ? ` ${e(hof.finalScore)}` : ""}</span>` : ""}</span>`
-        : `<span class="tcard__meta faint">${facts.length ? e(facts.join(" · ")) : "Squads to be announced"}</span>`
+        : `<span class="tcard__meta faint">${facts.length ? e(facts.join(" · ")) : "Squads will be announced soon"}</span>`
     }
     <span class="tcard__go" aria-hidden="true">→</span>
   </a>`;

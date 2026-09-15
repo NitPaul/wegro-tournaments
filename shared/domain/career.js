@@ -16,6 +16,7 @@
 import { MEDALS } from "./constants.js";
 import { isGuest, isPlayed, matchesList } from "./helpers.js";
 import { matchSides } from "./standings.js";
+import { seasonSortKey } from "./season.js";
 import { playerStats } from "./stats.js";
 
 /** The counters a career adds up. Every one comes straight from playerStats. */
@@ -125,7 +126,8 @@ export function buildCareers(tournaments, archives = []) {
 
   // Newest tournament first on each person's record.
   for (const c of careers.values()) {
-    c.tournaments.sort((a, b) => String(b.startsOn ?? b.season ?? "").localeCompare(String(a.startsOn ?? a.season ?? "")));
+    // "September 2026" after "March 2026": by date, not by the words.
+    c.tournaments.sort((a, b) => seasonSortKey(b).localeCompare(seasonSortKey(a)));
   }
   return careers;
 }
