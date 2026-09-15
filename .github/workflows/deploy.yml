@@ -3,9 +3,39 @@ name: CI/CD to Hostinger
 on:
   push:
     branches: [ main ]
+  # Pull requests run the tests only (the deploy job below is limited to pushes
+  # to main), so a broken change is caught while it is still a proposal.
+  pull_request:
+    branches: [ main ]
 
 jobs:
+  # A failing test must never reach the server. Every merge to main is a
+  # production deploy, and the tests cover exactly the things that are
+  # expensive to get wrong on a match day: standings, points, the auction
+  # rules, cards, the captain fix, and who is allowed to change what.
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v4
+
+      # Node 24 matches the Docker image. The code uses the built-in
+      # node:sqlite module, which needs it.
+      - name: Set up Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: npm
+
+      - name: Install
+        run: npm ci
+
+      - name: Test
+        run: npm test
+
   deploy:
+    needs: test
+    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
     runs-on: ubuntu-latest
 
     steps:
