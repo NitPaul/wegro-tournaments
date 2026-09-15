@@ -37,7 +37,7 @@
 }
 .hero-land__title {
   font-size: clamp(40px, 7.4vw, 76px);
-  line-height: 0.98;
+  line-height: 1.06; /* three lines: room for the "y" and "g" descenders */
   letter-spacing: -0.045em;
   margin: var(--space-2) 0 var(--space-4);
 }
