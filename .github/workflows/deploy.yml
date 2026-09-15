@@ -70,8 +70,13 @@ jobs:
             # changes. A new version can migrate the database on its first
             # start; this is the copy to go back to if that ever goes wrong.
             # No backup, no deploy.
+            #
+            # < /dev/null matters: this whole script reaches the server on
+            # standard input ('bash -s'), and docker compose exec reads standard
+            # input — without it, the exec swallows the rest of the script and
+            # the deploy "succeeds" having done nothing after the backup.
             echo "💾 Backing up before deploying..."
-            if ! docker compose exec -T app npm run backup; then
+            if ! docker compose exec -T app npm run backup < /dev/null; then
               echo "❌ The backup failed, so nothing was deployed. Check that the app is running."
               exit 1
             fi
