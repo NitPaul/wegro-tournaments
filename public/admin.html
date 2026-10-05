@@ -81,6 +81,7 @@
 
         <div id="adminBody" hidden>
           <div class="tabs" id="tabs" role="tablist" aria-label="Admin sections">
+            <button class="tab" id="tab-site" role="tab" aria-controls="panel-site" aria-selected="false" type="button" hidden>Site</button>
             <button class="tab" id="tab-tournaments" role="tab" aria-controls="panel-tournaments" aria-selected="false" type="button" hidden>Tournaments</button>
             <button class="tab" id="tab-accounts" role="tab" aria-controls="panel-accounts" aria-selected="false" type="button" hidden>Accounts</button>
             <button class="tab" id="tab-players" role="tab" aria-controls="panel-players" aria-selected="false" type="button" hidden>Players</button>
@@ -90,6 +91,61 @@
             <button class="tab" id="tab-settings" role="tab" aria-controls="panel-settings" aria-selected="false" type="button">Settings</button>
             <button class="tab" id="tab-danger" role="tab" aria-controls="panel-danger" aria-selected="false" type="button">Danger</button>
           </div>
+
+          <!-- The whole site (super admin) -->
+          <section class="panel" id="panel-site" role="tabpanel" aria-labelledby="tab-site" hidden>
+            <div class="card">
+              <h2 class="card__title">Take a copy of everything</h2>
+              <p class="faint">
+                Every tournament, every account and every photo. If this server is ever lost, this file
+                is the site: put the database back in the data folder, the photos beside it, and start it
+                again. Keep a copy somewhere that is not this server.
+              </p>
+              <div class="card-buttons">
+                <button class="btn btn--primary" id="siteBackupZip" type="button">Download everything (.zip)</button>
+                <button class="btn btn--ghost" id="siteBackupDb" type="button">Database only (.sqlite)</button>
+                <button class="btn btn--ghost" id="siteBackupJson" type="button">Readable copy (.json)</button>
+                <button class="btn btn--ghost" id="siteBackupServer" type="button">Also keep one on the server</button>
+              </div>
+              <p class="faint" id="siteBackupNote"></p>
+            </div>
+
+            <div class="card">
+              <h2 class="card__title">What is on the site</h2>
+              <dl class="site-stats" id="siteCounts"></dl>
+            </div>
+
+            <div class="card">
+              <h2 class="card__title">How this server is set up</h2>
+              <div id="siteWarnings"></div>
+              <dl class="deflist" id="siteConfig"></dl>
+            </div>
+
+            <div class="card">
+              <h2 class="card__title">Copies already on the server</h2>
+              <p class="faint">In <code id="siteBackupDir"></code>, newest first.</p>
+              <div id="siteBackups"></div>
+            </div>
+
+            <div class="card">
+              <h2 class="card__title">Bring in data from the old site</h2>
+              <p class="faint">
+                Take a backup from the old console (Danger → Download backup) and load it here. Use a
+                backup taken <b>after</b> match day, or it will arrive with no results in it.
+                This always creates a new tournament — it never merges into an existing one.
+              </p>
+              <div class="row">
+                <input class="input grow" id="importFile" type="file" accept="application/json,.json" aria-label="Backup file" />
+                <select class="input" id="importStatus" aria-label="Import as">
+                  <option value="completed">Finished</option>
+                  <option value="active">Active</option>
+                  <option value="draft">Draft</option>
+                </select>
+                <button class="btn btn--primary" id="importBtn" type="button">Import</button>
+              </div>
+              <div id="importReport"></div>
+            </div>
+          </section>
 
           <!-- Tournaments (super admin) -->
           <section class="panel" id="panel-tournaments" role="tabpanel" aria-labelledby="tab-tournaments" hidden>
@@ -391,6 +447,16 @@
             <div class="card"><h2 class="card__title">Auction rules</h2><div class="form-grid" id="auctionSettings"></div></div>
             <div class="card"><h2 class="card__title">Award points</h2><div class="form-grid form-grid--tight" id="pointsGrid"></div></div>
             <div class="card">
+              <h2 class="card__title">Download a copy of this tournament</h2>
+              <p class="faint">
+                This tournament as JSON — teams, players, fixtures, results and the match log. Worth
+                doing after the auction and again before kick-off. It is only this tournament; the
+                whole-site backup lives under Site.
+              </p>
+              <button class="btn btn--ghost" id="exportBtn" type="button">Download backup</button>
+            </div>
+
+            <div class="card">
               <h2 class="card__title">Medals</h2>
               <p class="faint">Leave a medal on “computed” to give it to the top of the table, or name the winner the referee declared.</p>
               <div class="form-grid" id="medalGrid"></div>
@@ -412,33 +478,6 @@
                   <option value="completed">Finished — locked, in the Hall of Fame</option>
                 </select>
               </div>
-            </div>
-
-            <div class="card">
-              <h2 class="card__title">Bring in data from the old site</h2>
-              <p class="faint">
-                Take a backup from the old console (Danger → Download backup) and load it here. Use a
-                backup taken <b>after</b> match day, or it will arrive with no results in it.
-                This always creates a new tournament — it never merges into this one.
-              </p>
-              <div class="row">
-                <input class="input grow" id="importFile" type="file" accept="application/json,.json" aria-label="Backup file" />
-                <select class="input" id="importStatus" aria-label="Import as">
-                  <option value="completed">Finished</option>
-                  <option value="active">Active</option>
-                  <option value="draft">Draft</option>
-                </select>
-                <button class="btn btn--primary" id="importBtn" type="button">Import</button>
-              </div>
-              <div id="importReport"></div>
-            </div>
-
-            <div class="card">
-              <h2 class="card__title">Download a copy</h2>
-              <p class="faint">
-                This tournament as JSON. Worth doing after the auction and again before kick-off.
-              </p>
-              <button class="btn btn--ghost" id="exportBtn" type="button">Download backup</button>
             </div>
 
             <div class="card">

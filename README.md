@@ -45,6 +45,7 @@ All three are fixed here, and the first two could not have been fixed in place.
 | **Auction with faces** | Tap a player's photo to put them on the block; a projector screen at `/auction/<slug>` shows them to the room with their record, the team budgets, and a SOLD card with confetti for each sale. Teams and the auction pool are built by picking people from the roster. |
 | **Player roster** | Everyone who plays, with a photo, a usual position and a rating. Their goals, saves, titles and medals add up across every tournament. The super admin's rating (1–99) is the headline; a rating worked out from stats sits beside it. |
 | **Hall of Fame** | Every finished tournament: date, champion, runners-up, final score and all five medals. |
+| **Backups from the console** | **Site** takes a copy of the whole platform — database, readable dump and every photo — as one download, and says what is on the site and what is wrong with how the server is set up. Each tournament's own Settings has a copy of just that tournament. |
 | **Captains fixed** | Captains are players. Their goals, assists, cards and clean sheets count everywhere. |
 | **Tests** | Standings, points, medals, the auction, cards, migrations, and who may do what — run before every deploy. The old project had none. |
 | **Docker** | One container, one SQLite file, one command. |
@@ -129,6 +130,8 @@ environments, so a fork of this repo gets you the code and nothing else.
 | Change anything once a tournament is **finished** | ✅ | — | — |
 | Teams, captains, players, auction, settings | ✅ | ✅ own tournament | — |
 | Match day: clock, scores, goals, cards | ✅ | ✅ own tournament | ✅ own tournament |
+| Download a copy of **their own** tournament | ✅ | ✅ | — |
+| Site screen: whole-site backup, configuration, old-site import | ✅ | — | — |
 | Clear scores, reset auction, delete | ✅ | — | — |
 
 **An admin or referee account belongs to exactly one tournament.** It is chosen
@@ -227,6 +230,26 @@ and marking a striker for sixteen minutes are not the same achievement.
 
 ## Backups
 
+**From the console: Site → Take a copy of everything.** One `.zip` with the
+database, a readable JSON dump and every photo — downloaded through the browser,
+so the copy ends up on your laptop rather than on the server that might be the
+thing that fails. The same screen can also write a copy into the server's backup
+folder and lists the ones already there with their age, so "when did we last take
+one?" has an answer on screen.
+
+The **Site** screen is the super admin's, and it also shows what is on the site
+(tournaments, people, matches, photos, database size and schema version), how
+this server is configured, and anything about that configuration that is wrong —
+a `PUBLIC_URL` still pointing at localhost breaks sign-in and link previews, and
+nothing else in the console would ever mention it.
+
+**One tournament on its own: Settings → Download a copy of this tournament.**
+Teams, players, fixtures, results and the match log, as JSON. Its own admin can
+take it — worth doing after the auction and again before kick-off. It contains
+that tournament only: no accounts, no other tournaments.
+
+From a terminal:
+
 ```bash
 npm run backup     # or: docker compose exec app npm run backup
 ```
@@ -236,6 +259,10 @@ even mid-match), a readable `.json` dump, and a `-photos` folder with every
 player photo. Restore with `npm run restore <file.json>`, which puts the photos
 back too, or by putting the `.sqlite` file and the photos back — see the comment
 at the top of `tools/restore.js`.
+
+**To rebuild the site from a downloaded `.zip`:** put `wegro.sqlite` in the data
+volume as the database, copy `photos/` beside it, and start the server. That is
+the whole restore.
 
 ---
 

@@ -93,7 +93,9 @@ Fame before and after.
   small fix". Freeze the code the day before.
 - **Do a practice run the day before**: create a throwaway tournament, add two
   teams, start the clock, log a goal and a card, delete it.
-- **Take a backup before kick-off**, from Danger → Download a copy.
+- **Take a backup before kick-off**: the tournament's own, from its Settings →
+  Download a copy of this tournament, and the whole site from Site → Take a copy
+  of everything. Put the second one somewhere that is not the server.
 - **Do not change `SESSION_SECRET`** unless you intend to sign everybody out.
 - **Do not touch the medal overrides mid-tournament** unless you mean it — an
   override wins over the computed winner and the card will say so.
@@ -106,6 +108,7 @@ Fame before and after.
 | Groups, knockout rounds, penalties, what a gaming tournament is | `shared/domain/knockout.js`, `standings.js`, `helpers.js` |
 | What an endpoint does, or who may call it | `server/routes/` |
 | A SQL query | `server/db/repo/` |
+| Backups, the Site screen, what the console reports about the server | `server/routes/site.js`, `server/zip.js`, `public/js/admin/site.js` |
 | The landing page | `public/index.html`, `public/js/landing.js`, `public/css/landing.css` |
 | A tournament's scoreboard (`/t/<slug>`) | `public/tournament.html`, `public/js/tournament.js` |
 | The player list and profiles | `public/players.html`, `public/js/players.js`, `public/js/player-card.js`, `public/css/players.css` |

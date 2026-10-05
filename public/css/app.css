@@ -1637,3 +1637,53 @@ select.input.input--sm {
   text-align: center;
   font-variant-numeric: tabular-nums;
 }
+
+/* ------------------------------------------------------------------ Site */
+
+/* The counts on the Site screen: the same tiles a player's career uses. */
+.site-stats {
+  display: grid;
+  gap: var(--space-3);
+  grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
+  margin: 0;
+}
+.site-stats > div {
+  padding: var(--space-3) var(--space-4);
+  border-radius: var(--radius-sm);
+  background: var(--surface);
+  border: 1px solid var(--line);
+}
+.site-stats dt {
+  font-size: 12px;
+  font-weight: 700;
+  color: var(--faint);
+}
+.site-stats dd {
+  margin: 2px 0 0;
+  font-family: var(--font-display);
+  font-size: 22px;
+  font-weight: 800;
+}
+.site-stats dd.faint {
+  font-family: var(--font);
+  font-size: 13px;
+  font-weight: 600;
+  margin-top: 2px;
+}
+
+/* Something about this server is wrong and nothing else would say so. */
+.banner--warn {
+  background: rgba(240, 198, 90, 0.12);
+  border: 1px solid rgba(240, 198, 90, 0.45);
+  color: var(--text);
+  font-weight: 600;
+}
+
+/* A data folder's full path is long and has no spaces in it; let it wrap
+   rather than pushing the whole screen sideways on a phone. */
+#siteConfig code,
+#siteBackups code,
+#siteBackupDir {
+  overflow-wrap: anywhere;
+  word-break: break-word;
+}

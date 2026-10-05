@@ -160,6 +160,34 @@ tournamentRoutes.get(
   }),
 );
 
+/**
+ * This tournament as JSON, downloaded by the people running it.
+ *
+ * Its own admin can take it — it is their tournament, and the copy they want
+ * after the auction and again before kick-off is this one. The whole-site
+ * backup, which has every tournament and every account in it, stays with the
+ * super admin under /api/site.
+ */
+tournamentRoutes.get(
+  "/:tid/export",
+  requireTournament("admin"),
+  route(async (req, res) => {
+    const data = loadTournament(req.tournament.id);
+    const filename = `${data.slug || "tournament"}-${new Date().toISOString().slice(0, 10)}.json`;
+    audit(req, "export.tournament", { name: data.name });
+
+    res.setHeader("Content-Type", "application/json; charset=utf-8");
+    res.setHeader("Content-Disposition", `attachment; filename="${filename}"`);
+    res.send(
+      JSON.stringify(
+        { _format: "wegro-tournaments-single", _version: 1, _exportedAt: new Date().toISOString(), tournament: data },
+        null,
+        2,
+      ),
+    );
+  }),
+);
+
 tournamentRoutes.patch(
   "/:tid",
   requireTournament("admin"),

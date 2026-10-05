@@ -138,6 +138,20 @@ year-long cache; each upload gets a new random file name, so a changed photo is
 never served stale. The server checks the bytes are really a JPEG, PNG or WebP
 and never builds a path from anything the client sent (`server/photos.js`).
 
+## Backups
+
+`server/routes/site.js` is the super admin's: a `VACUUM INTO` snapshot of the
+database, a JSON dump of every table, and a ZIP of both plus every photo, all
+downloaded through the browser. `server/zip.js` writes that archive — stored
+entries, no compression, about a hundred lines, so the one-dependency rule
+survives the feature. The same screen reports the configuration, because the
+settings that break a site quietly (`PUBLIC_URL`, the data directory) are
+invisible everywhere else.
+
+A single tournament's export is `GET /api/tournaments/:tid/export`, on the
+tournament router, so its own admin can take it and `test/api/isolation.test.js`
+checks it against another tournament's staff like every other route there.
+
 ## Permissions
 
 `server/auth/middleware.js`. `requireTournament(minRole)` loads the tournament,

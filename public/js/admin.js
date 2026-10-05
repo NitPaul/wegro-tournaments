@@ -12,6 +12,7 @@ import * as D from "/shared/domain/index.js";
 import { $, $$, confirmPhrase, rememberTab, setHTML, show, toast, wireSiteHeader, wireTabs } from "./ui.js";
 import { auth, people, serverNow, syncClock, tournaments, transfer, watchTournament } from "./api.js";
 import { renderAccounts, wireAccounts } from "./admin/accounts.js";
+import { renderSite, wireSite } from "./admin/site.js";
 import { renderOverview, wireOverview } from "./admin/overview.js";
 import { renderPlayers as renderRoster, tournamentChanged, wirePlayers } from "./admin/players.js";
 import { renderAuctionDesk, sellOnBlock, wireAuctionDesk } from "./admin/auction-desk.js";
@@ -39,9 +40,10 @@ async function boot() {
     onChange: (n) => {
       saveTab(n);
       if (n === "players") renderRoster();
+      if (n === "site") renderSite();
       // The tournament bar says which tournament the tabs act on. The super
       // admin's Tournaments and Accounts screens act on none, so hide it there.
-      $("#adminView").classList.toggle("on-global-tab", n === "tournaments" || n === "accounts");
+      $("#adminView").classList.toggle("on-global-tab", ["site", "tournaments", "accounts"].includes(n));
     },
   });
   saveTab = rememberTab("wgt:admintab", selectTab);
@@ -56,6 +58,7 @@ async function boot() {
     refresh: refreshIdentity,
   });
   wireAccounts({ getTournaments: () => myTournaments });
+  wireSite({ toast });
   wirePlayers(() => ({ me, data, perms }));
   wireAuctionDesk(() => data);
   wireRosterPicker(() => data);
@@ -130,6 +133,7 @@ async function refreshIdentity() {
     }
   }
 
+  show($("#tab-site"), isSuper);
   show($("#tab-tournaments"), isSuper);
   show($("#tab-accounts"), isSuper);
   show($("#noTournaments"), !hasOne && !isSuper);
