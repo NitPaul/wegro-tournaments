@@ -8,6 +8,9 @@
 --   001  users: sign in with a `username`, email optional, no 'pending' state.
 --        tournaments: a permanent `code`. tournament_staff: one tournament per
 --        account. audit_log: `username`.
+--   002  people (the roster) and players.person_id.
+--   003  tournaments.mode ('field' or 'esports') and .game; teams.group_label;
+--        matches.stage and the penalty shoot-out; gaming profiles on people.
 --
 -- Design notes worth reading before changing anything here:
 --

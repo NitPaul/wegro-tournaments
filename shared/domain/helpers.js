@@ -46,6 +46,12 @@ export const getPoints = (data) => ({ ...DEFAULT_POINTS, ...(data?.settings?.poi
 
 export const isFriendly = (data) => data?.format === "friendly";
 
+/** A gaming tournament: FC 26 on a console rather than boots on a pitch. */
+export const isEsports = (data) => data?.mode === "esports";
+
+/** What this tournament is playing, for a badge: "EA SPORTS FC 26". */
+export const gameName = (data) => (isEsports(data) ? data?.game || "FC 26" : "");
+
 /* -------------------------------------------------------------- accessors */
 
 export const teamsList = (data) =>
@@ -62,7 +68,13 @@ export const playersList = (data) =>
 
 export const matchesList = (data) => toArray(data?.matches).sort((a, b) => a.no - b.no);
 
-export const groupMatches = (data) => matchesList(data).filter((m) => !m.isFinal);
+/**
+ * The matches that decide the table. Knockout rounds — the semi-finals and the
+ * final — are not among them, however they are flagged: `stage` says so, and
+ * `isFinal` said so before `stage` existed.
+ */
+export const groupMatches = (data) =>
+  matchesList(data).filter((m) => !m.isFinal && (!m.stage || m.stage === "group"));
 export const finalMatch = (data) => matchesList(data).find((m) => m.isFinal) || null;
 
 export const teamById = (data, id) => (id ? data?.teams?.[id] || null : null);
@@ -78,6 +90,21 @@ export const isGuest = (p) => p?.kind === "guest";
 export const isAuctionPlayer = (p) => !p?.kind || p.kind === "auction";
 
 /** Everyone attached to a team: bought players, the captain, and any guests. */
+/** The groups in play, in order: ["A", "B"], or [] when everyone is in one table. */
+export const groupLabels = (data) =>
+  [...new Set(teamsList(data).map((t) => t.group).filter(Boolean))].sort();
+
+/** The teams in one group, or every team when no group is named. */
+export const teamsInGroup = (data, group) =>
+  group ? teamsList(data).filter((t) => t.group === group) : teamsList(data);
+
+/**
+ * The people who make up a team. In football that is the captain and the squad;
+ * in a gaming tournament it is the pair sharing the controller.
+ */
+export const teamMembers = (data, teamId) =>
+  playersList(data).filter((p) => p.teamId === teamId);
+
 export const teamPlayers = (data, teamId) =>
   teamId ? playersList(data).filter((p) => p.teamId === teamId) : [];
 

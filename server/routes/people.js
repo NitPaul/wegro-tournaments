@@ -18,7 +18,7 @@
 import express from "express";
 
 import { audit } from "../audit.js";
-import { POSITIONS } from "../../shared/domain/constants.js";
+import { PLATFORMS, POSITIONS } from "../../shared/domain/constants.js";
 import { requireAuth } from "../auth/middleware.js";
 import { badRequest, forbidden, notFoundError, route, HttpError } from "../http/errors.js";
 import { assignmentOf } from "../db/repo/tournaments.js";
@@ -55,6 +55,22 @@ function cleanPos(raw) {
   const pos = String(raw).toUpperCase();
   if (!POSITIONS.includes(pos)) throw badRequest(`Position must be one of ${POSITIONS.join(", ")}.`);
   return pos;
+}
+
+/** Gamer tag, platform, favourite club — short free text, the platform nudged towards the usual three. */
+function gamingProfile(body) {
+  const out = {};
+  if (body?.gamerTag !== undefined) out.gamerTag = String(body.gamerTag ?? "").trim().slice(0, 40) || null;
+  if (body?.favClub !== undefined) out.favClub = String(body.favClub ?? "").trim().slice(0, 40) || null;
+  if (body?.platform !== undefined) {
+    const raw = String(body.platform ?? "").trim();
+    if (!raw) out.platform = null;
+    else {
+      const known = PLATFORMS.find((p) => p.toLowerCase() === raw.toLowerCase());
+      out.platform = known ?? raw.slice(0, 24);
+    }
+  }
+  return out;
 }
 
 function cleanRating(raw) {
@@ -101,6 +117,8 @@ peopleRoutes.post(
     const ratingNote = req.user.isSuper ? String(req.body?.ratingNote ?? "").slice(0, 280) : "";
 
     const person = createPerson({ name, pos, rating, ratingNote, createdBy: req.user.id });
+    const profile = gamingProfile(req.body);
+    if (Object.keys(profile).length) updatePerson(person.id, profile);
     audit(req, "person.create", { name, pos }, own?.id ?? null);
     changed("person.create", person.id);
     res.status(201).json({ person: rosterPerson(person.id, { isSuper: req.user.isSuper }) });
@@ -111,9 +129,27 @@ peopleRoutes.patch(
   "/:id",
   requireAuth,
   route(async (req, res) => {
-    if (!req.user.isSuper) throw forbidden("Only the super admin can edit or rate players on the roster.");
     const person = getPerson(req.params.id);
     if (!person) throw notFoundError("No such player.");
+
+    // A gamer tag, platform or favourite club is tournament detail: the admin
+    // running a gaming tournament can fill them in for their own players, right
+    // up to the moment the first match starts. Names and ratings stay with the
+    // super admin, because the roster is shared by every tournament.
+    if (!req.user.isSuper) {
+      const profile = gamingProfile(req.body);
+      const onlyProfile = Object.keys(req.body ?? {}).every((k) => ["gamerTag", "platform", "favClub"].includes(k));
+      if (!onlyProfile || !Object.keys(profile).length) {
+        throw forbidden("Only the super admin can edit or rate players on the roster.");
+      }
+      if (!canEditPhoto(req.user, person)) {
+        throw forbidden("You can only edit players in your own tournament.");
+      }
+      updatePerson(person.id, profile);
+      audit(req, "person.update", { name: person.name, ...profile });
+      changed("person.update", person.id);
+      return res.json({ person: rosterPerson(person.id, { isSuper: false }) });
+    }
 
     const patch = {
       name: req.body?.name === undefined ? undefined : cleanName(req.body.name),
@@ -121,6 +157,10 @@ peopleRoutes.patch(
       rating: cleanRating(req.body?.rating),
       ratingNote: req.body?.ratingNote === undefined ? undefined : String(req.body.ratingNote ?? "").slice(0, 280),
       active: req.body?.active === undefined ? undefined : Boolean(req.body.active),
+      gameRating: req.body?.gameRating === undefined ? undefined : cleanRating(req.body.gameRating),
+      gameRatingNote:
+        req.body?.gameRatingNote === undefined ? undefined : String(req.body.gameRatingNote ?? "").slice(0, 280),
+      ...gamingProfile(req.body),
     };
     updatePerson(person.id, patch);
 

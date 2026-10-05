@@ -276,6 +276,70 @@ describe("migration 002 — the player roster", () => {
   });
 });
 
+describe("migration 003 — gaming tournaments, groups and knockouts", () => {
+  it("leaves every existing tournament a football one", () => {
+    resetToBase();
+    seedLegacy();
+    dbm.applyMigrations({ log: quiet });
+    const rows = dbm.db.prepare("SELECT mode, game FROM tournaments").all();
+    assert.ok(rows.length >= 2);
+    for (const r of rows) {
+      assert.equal(r.mode, "field");
+      assert.equal(r.game, null);
+    }
+  });
+
+  it("accepts a gaming tournament and refuses any other mode", () => {
+    resetToBase();
+    seedLegacy();
+    dbm.applyMigrations({ log: quiet });
+    dbm.db.prepare("UPDATE tournaments SET mode = 'esports', game = 'EA SPORTS FC 26' WHERE id = 'tn_friendly'").run();
+    assert.equal(dbm.db.prepare("SELECT mode FROM tournaments WHERE id = 'tn_friendly'").get().mode, "esports");
+    assert.throws(() => dbm.db.prepare("UPDATE tournaments SET mode = 'chess' WHERE id = 'tn_friendly'").run(), /CHECK/);
+  });
+
+  it("keeps teams out of groups until one is given", () => {
+    resetToBase();
+    seedLegacy();
+    dbm.applyMigrations({ log: quiet });
+    assert.equal(dbm.db.prepare("SELECT group_label FROM teams WHERE id = 'tm_1'").get().group_label, null);
+    dbm.db.prepare("UPDATE teams SET group_label = 'A' WHERE id = 'tm_1'").run();
+    assert.equal(dbm.db.prepare("SELECT group_label FROM teams WHERE id = 'tm_1'").get().group_label, "A");
+  });
+
+  it("adds knockout rounds and a shoot-out, and refuses a stage it does not know", () => {
+    resetToBase();
+    seedLegacy();
+    dbm.applyMigrations({ log: quiet });
+    dbm.db
+      .prepare(
+        `INSERT INTO matches (id, tournament_id, no, stage, is_final, home_pens, away_pens)
+         VALUES ('mt_sf', 'tn_2026', 8, 'semi', 0, 4, 3)`,
+      )
+      .run();
+    const row = dbm.db.prepare("SELECT stage, home_pens, away_pens FROM matches WHERE id = 'mt_sf'").get();
+    assert.deepEqual({ ...row }, { stage: "semi", home_pens: 4, away_pens: 3 });
+    assert.throws(() => dbm.db.prepare("UPDATE matches SET stage = 'quarter' WHERE id = 'mt_sf'").run(), /CHECK/);
+  });
+
+  it("gives people a gaming profile, empty until it is filled in", () => {
+    resetToBase();
+    seedLegacy();
+    dbm.applyMigrations({ log: quiet });
+    dbm.db
+      .prepare("INSERT INTO people (id, name, created_at, updated_at) VALUES ('pp_g', 'Munna', 1, 1)")
+      .run();
+    const before = dbm.db.prepare("SELECT gamer_tag, platform, fav_club, game_rating, game_rating_note FROM people WHERE id = 'pp_g'").get();
+    assert.deepEqual({ ...before }, { gamer_tag: null, platform: null, fav_club: null, game_rating: null, game_rating_note: "" });
+
+    dbm.db
+      .prepare("UPDATE people SET gamer_tag = 'munna_fc', platform = 'PlayStation', fav_club = 'Real Madrid', game_rating = 88 WHERE id = 'pp_g'")
+      .run();
+    assert.equal(dbm.db.prepare("SELECT game_rating FROM people WHERE id = 'pp_g'").get().game_rating, 88);
+    assert.throws(() => dbm.db.prepare("UPDATE people SET game_rating = 0 WHERE id = 'pp_g'").run(), /CHECK/);
+  });
+});
+
 describe("the migration runner", () => {
   it("rolls a failing migration back completely and names it", () => {
     resetToBase();

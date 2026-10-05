@@ -30,6 +30,8 @@ const teamOut = (r) => ({
   id: r.id,
   slot: r.slot,
   name: r.name,
+  // 'A', 'B', … or null when everyone is in one table.
+  group: r.group_label ?? null,
   jerseyColor: r.jersey_color,
   jerseyLabel: r.jersey_label,
   jerseyCost: r.jersey_cost,
@@ -68,6 +70,10 @@ const eventOut = (r) => ({
 const matchOut = (r) => ({
   id: r.id,
   no: r.no,
+  // 'group', 'semi' or 'final'. Older matches have none and are read by isFinal.
+  stage: r.stage ?? null,
+  homePens: r.home_pens,
+  awayPens: r.away_pens,
   homeId: r.home_team_id,
   awayId: r.away_team_id,
   homeScore: r.home_score,
@@ -143,6 +149,8 @@ export function loadTournament(key) {
     name: row.name,
     season: row.season,
     format: row.format,
+    mode: row.mode ?? "field",
+    game: row.game ?? null,
     status: row.status,
     startsOn: row.starts_on,
     createdAt: row.created_at,
@@ -186,6 +194,8 @@ export function listTournaments({ status = null, includeDrafts = true } = {}) {
       name: r.name,
       season: r.season,
       format: r.format,
+      mode: r.mode ?? "field",
+      game: r.game ?? null,
       status: r.status,
       startsOn: r.starts_on,
       createdAt: r.created_at,
@@ -229,12 +239,12 @@ function newTournamentCode() {
   throw new Error("Could not find a free tournament code.");
 }
 
-export function createTournament({ name, season, format, startsOn, meta, settings, userId }) {
+export function createTournament({ name, season, format, mode = "field", game = null, startsOn, meta, settings, userId }) {
   const id = newId("tn");
   db.prepare(
-    `INSERT INTO tournaments (id, code, slug, name, season, format, status, starts_on,
+    `INSERT INTO tournaments (id, code, slug, name, season, format, mode, game, status, starts_on,
                               venue_json, settings_json, created_by, created_at)
-     VALUES (?, ?, ?, ?, ?, ?, 'draft', ?, ?, ?, ?, ?)`,
+     VALUES (?, ?, ?, ?, ?, ?, ?, ?, 'draft', ?, ?, ?, ?, ?)`,
   ).run(
     id,
     newTournamentCode(),
@@ -242,6 +252,8 @@ export function createTournament({ name, season, format, startsOn, meta, setting
     name,
     season ?? "",
     format,
+    mode,
+    game,
     startsOn ?? null,
     JSON.stringify(meta ?? {}),
     JSON.stringify(settings ?? {}),
@@ -256,6 +268,8 @@ const TOURNAMENT_COLUMNS = {
   season: "season",
   status: "status",
   format: "format",
+  mode: "mode",
+  game: "game",
   startsOn: "starts_on",
 };
 
