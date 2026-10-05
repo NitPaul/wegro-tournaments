@@ -294,3 +294,12 @@ describe("the gaming rating", () => {
     assert.deepEqual(D.gameHeadlineRating({}, { matches: 0, points: 0 }), { value: null, source: null });
   });
 });
+
+describe("a goal difference on the console", () => {
+  it("stays in step with the goals rather than sitting at zero", () => {
+    const careers = D.buildCareers([playGroups(fc26())]);
+    const g = careers.get("pp_munna").game.totals;
+    assert.equal(g.goalDiff, g.goalsFor - g.goalsAgainst);
+    assert.ok(g.goalsFor > 0);
+  });
+});

@@ -115,9 +115,20 @@
                   </span>
                 </div>
                 <label class="field">
+                  <span>Kind</span>
+                  <select class="input" id="newTournamentMode">
+                    <option value="field">Football — played on a pitch</option>
+                    <option value="esports">Gaming — played on a console</option>
+                  </select>
+                </label>
+                <label class="field" id="newTournamentGameField" hidden>
+                  <span>Game</span>
+                  <input class="input" id="newTournamentGame" type="text" maxlength="60" value="EA SPORTS FC 26" />
+                </label>
+                <label class="field">
                   <span>Format</span>
                   <select class="input" id="newTournamentFormat">
-                    <option value="league">League — auction, table, final</option>
+                    <option value="league">League — table and a final</option>
                     <option value="friendly">Friendly — just matches</option>
                   </select>
                 </label>
@@ -218,7 +229,37 @@
 
           <!-- Setup -->
           <section class="panel" id="panel-setup" role="tabpanel" aria-labelledby="tab-setup">
-            <div class="card">
+            <!-- Gaming tournaments: pairs on one console, each with a team name,
+                 a group, and their members taken from the roster. -->
+            <div class="card" id="pairsCard" hidden>
+              <h2 class="card__title">Teams</h2>
+              <p class="faint">
+                A team is the people who share the controller. Give them a name, put them in a group if
+                you are running groups, and pick them from the roster so their photos and records come
+                with them.
+              </p>
+              <div id="pairList"></div>
+              <div class="form-grid">
+                <label class="field"><span>Team name</span><input class="input" id="newPairName" type="text" maxlength="60" placeholder="e.g. Rocket Boys" /></label>
+                <label class="field">
+                  <span>Group</span>
+                  <select class="input" id="newPairGroup">
+                    <option value="">No groups</option>
+                    <option value="A">Group A</option>
+                    <option value="B">Group B</option>
+                    <option value="C">Group C</option>
+                    <option value="D">Group D</option>
+                  </select>
+                </label>
+                <label class="field"><span>Player 1</span><select class="input" id="newPairOne"></select></label>
+                <label class="field"><span>Player 2</span><select class="input" id="newPairTwo"></select></label>
+              </div>
+              <div class="card-buttons form-actions">
+                <button class="btn btn--primary" id="addPair" type="button">Add team</button>
+              </div>
+            </div>
+
+            <div class="card" id="teamsCard">
               <h2 class="card__title">Teams &amp; captains</h2>
               <div id="teamList"></div>
               <div class="row row--spaced">
@@ -229,7 +270,7 @@
               </div>
             </div>
 
-            <div class="card">
+            <div class="card" id="squadCard">
               <div class="spread">
                 <h2 class="card__title">Players</h2>
                 <button class="btn btn--primary" id="openRosterPicker" type="button">Add from the roster</button>
@@ -255,9 +296,20 @@
             <div class="card">
               <h2 class="card__title">Fixtures</h2>
               <p class="faint" id="fixtureHint"></p>
-              <div class="card-buttons">
-                <button class="btn btn--primary" id="generateFixtures" type="button">Generate round robin</button>
+              <div class="form-grid">
+                <label class="field">
+                  <span>Decided by</span>
+                  <select class="input" id="knockoutChoice">
+                    <option value="none">The table alone</option>
+                    <option value="final" selected>A final</option>
+                    <option value="semis">Semi-finals, then a final</option>
+                  </select>
+                </label>
+              </div>
+              <div class="card-buttons form-actions">
+                <button class="btn btn--primary" id="generateFixtures" type="button">Generate fixtures</button>
                 <button class="btn btn--ghost" id="addMatch" type="button">Add one match</button>
+                <button class="btn btn--ghost" id="seedKnockout" type="button" hidden>Seed from the groups</button>
               </div>
               <div class="list-spaced" id="matchList"></div>
             </div>

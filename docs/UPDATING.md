@@ -79,6 +79,14 @@ It runs once, in order, inside a transaction, tracked by SQLite's own
 `user_version`. If it fails, nothing is applied and the server refuses to start
 with the reason. Write them so they can only run once.
 
+**Keep them additive.** `ALTER TABLE ... ADD COLUMN` accepts a `CHECK` and a
+`NOT NULL` with a default, which is enough for almost everything;
+`003-esports.sql` added nine columns across four tables that way, so no existing
+row was rewritten and the 2026 tournament could not be touched by it. Rebuilding
+a table is the one thing worth avoiding — and if you must, run it against a copy
+of the live backup first and compare the standings, the medals and the Hall of
+Fame before and after.
+
 ## Rules for not ruining a match day
 
 - **Never deploy on the day of a tournament.** Not the morning of, not "just a
@@ -95,6 +103,7 @@ with the reason. Write them so they can only run once.
 | You want to change | Look in |
 |---|---|
 | A scoring rule, a tiebreak, an auction guard | `shared/domain/` |
+| Groups, knockout rounds, penalties, what a gaming tournament is | `shared/domain/knockout.js`, `standings.js`, `helpers.js` |
 | What an endpoint does, or who may call it | `server/routes/` |
 | A SQL query | `server/db/repo/` |
 | The landing page | `public/index.html`, `public/js/landing.js`, `public/css/landing.css` |

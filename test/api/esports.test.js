@@ -293,3 +293,27 @@ describe("gaming profiles", () => {
     assert.equal((await referee.patch(`/api/people/${people.Anirban.id}`, { gamerTag: "nope" })).status, 403);
   });
 });
+
+describe("what the public pages are given", () => {
+  it("carries each member's gamer tag on the tournament document", async () => {
+    const doc = (await anon.get(`/api/tournaments/${T.id}`)).body.tournament;
+    const munna = Object.values(doc.players).find((p) => p.personId === people.Munna.id);
+    assert.equal(munna.gamerTag, "munna_fc", "the Teams tab shows it beside their name");
+    assert.equal(Object.values(doc.players).find((p) => p.personId === people.Sabbir.id).gamerTag, null);
+  });
+
+  it("says in the Hall of Fame which game a title was won at", async () => {
+    await boss.patch(`/api/tournaments/${T.id}`, { status: "completed" });
+    const entry = (await anon.get("/api/archive")).body.entries.find((x) => x.tournamentId === T.id);
+    assert.equal(entry.mode, "esports");
+    assert.equal(entry.game, "EA SPORTS FC 26");
+  });
+});
+
+describe("the shape a tournament was generated with", () => {
+  it("is remembered, so the console comes back showing it", async () => {
+    const doc = (await admin.get(`/api/tournaments/${T.id}`)).body.tournament;
+    assert.equal(doc.settings.knockout, "semis");
+    assert.equal(doc.settings.groups, 2);
+  });
+});

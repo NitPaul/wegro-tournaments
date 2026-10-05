@@ -90,6 +90,7 @@ function tournamentCard(t, hof, index) {
   return `<a class="tcard tcard--${phase}" href="/t/${encodeURIComponent(t.slug)}" style="--i:${index}">
     <span class="tcard__top">
       ${badge}
+      ${t.mode === "esports" ? `<span class="phase phase--game">🎮 ${e(t.game || "Gaming")}</span>` : ""}
       ${t.season ? `<span class="tcard__season">${e(t.season)}</span>` : ""}
     </span>
     <span class="tcard__name">${e(t.name)}</span>

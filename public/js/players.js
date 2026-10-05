@@ -10,7 +10,7 @@
 import * as D from "/shared/domain/index.js";
 import { $, setHTML, show, wireSiteHeader } from "./ui.js";
 import { people } from "./api.js";
-import { byStrength, playerCard } from "./player-card.js";
+import { byStrength, playerCard, playsGame } from "./player-card.js";
 
 const e = D.escapeHtml;
 
@@ -144,6 +144,70 @@ function paintList() {
 
 /* ---------------------------------------------------------------- profile */
 
+/**
+ * The other half of a player: who they are on the console and how they have
+ * done there. Deliberately a separate card with its own rating, because a goal
+ * on the pitch and a goal in FC 26 are not the same thing, and mixing them
+ * would flatter whoever plays both.
+ */
+function gameCard(person) {
+  if (!playsGame(person)) return "";
+
+  const g = person.game;
+  const t = g.totals ?? {};
+  const profile = [
+    g.gamerTag ? `<b>${e(g.gamerTag)}</b>` : "",
+    g.platform ? e(g.platform) : "",
+    g.favClub ? `plays as ${e(g.favClub)}` : "",
+  ].filter(Boolean);
+
+  const tile = (label, value) => `<div><dt>${e(label)}</dt><dd>${value}</dd></div>`;
+  const record = t.matches
+    ? `<dl class="career-tiles">
+         ${tile("Matches", t.matches)}
+         ${tile("Won", t.won)}
+         ${tile("Drawn", t.drawn)}
+         ${tile("Lost", t.lost)}
+         ${tile("Goals for", t.goalsFor)}
+         ${tile("Goals against", t.goalsAgainst)}
+         ${tile("Points", t.points)}
+         ${g.titles ? tile("Titles", `\u{1F3C6} ${g.titles}`) : ""}
+       </dl>`
+    : `<p class="faint">No FC 26 matches yet.</p>`;
+
+  const rows = (g.tournaments ?? []).map(
+    (x) => `<tr>
+      <td><a href="/t/${encodeURIComponent(x.slug)}">${e(x.name)}${x.season ? ` ${e(x.season)}` : ""}</a>${x.champion ? " \u{1F3C6}" : x.runnerUp ? " \u{1F948}" : ""}</td>
+      <td>${e(x.team?.name ?? "\u2014")}${x.team?.group ? ` <span class="faint">Group ${e(x.team.group)}</span>` : ""}</td>
+      <td>${x.partners?.length ? e(x.partners.map((p) => p.name).join(", ")) : `<span class="faint">solo</span>`}</td>
+      <td class="num">${x.stats.matches}</td><td class="num">${x.stats.won}</td><td class="num">${x.stats.drawn}</td>
+      <td class="num">${x.stats.lost}</td><td class="num">${x.stats.goalsFor}:${x.stats.goalsAgainst}</td>
+      <td class="num"><b>${x.stats.points}</b></td>
+    </tr>`,
+  );
+
+  return `<div class="card card--game">
+    <h2 class="card__title">\u{1F3AE} On FC 26</h2>
+    ${profile.length ? `<p class="profile__sub">${profile.join(" \u00b7 ")}</p>` : ""}
+    <dl class="rating-pair">
+      <div><dt>Gaming rating</dt><dd>${g.rating ?? "\u2013"}</dd></div>
+      <div><dt>From results</dt><dd>${g.statsRating ?? "\u2013"}</dd></div>
+    </dl>
+    ${g.statsRating === null && t.matches ? `<p class="faint">A rating from results appears after ${D.plural(2, "match", "matches")}.</p>` : ""}
+    ${record}
+    ${
+      rows.length
+        ? `<div class="table-scroll">
+             <table class="tbl">
+               <thead><tr><th>Tournament</th><th>Team</th><th>With</th><th class="num">M</th><th class="num">W</th><th class="num">D</th><th class="num">L</th><th class="num">GF:GA</th><th class="num">Pts</th></tr></thead>
+               <tbody>${rows.join("")}</tbody>
+             </table>
+           </div>`
+        : ""
+    }
+  </div>`;
+}
+
 async function showProfile(id) {
   show($("#listView"), false);
   let person;
@@ -188,7 +252,11 @@ async function showProfile(id) {
             <div><dt>Rating</dt><dd>${person.rating ?? "–"}</dd></div>
             <div><dt>From stats</dt><dd>${person.statsRating ?? "–"}</dd></div>
           </dl>
-          ${person.statsRating === null ? `<p class="faint">A rating from stats appears after ${D.plural(2, "match", "matches")}.</p>` : ""}
+          ${
+            person.statsRating === null && t.matches
+              ? `<p class="faint">A rating from stats appears after ${D.plural(2, "match", "matches")}.</p>`
+              : ""
+          }
         </div>
 
         ${
@@ -204,7 +272,7 @@ async function showProfile(id) {
         }
 
         <div class="card">
-          <h2 class="card__title">Career</h2>
+          <h2 class="card__title">${playsGame(person) ? "On the pitch" : "Career"}</h2>
           ${t.matches || person.tournaments.length ? `<dl class="career-tiles">${tiles}</dl>` : `<p class="faint">Yet to play in a tournament.</p>`}
         </div>
 
@@ -230,6 +298,7 @@ async function showProfile(id) {
               </div>`
             : ""
         }
+        ${gameCard(person)}
       </div>
     </div>`,
   );

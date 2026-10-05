@@ -87,7 +87,7 @@ function entryNode(x) {
   return `<details class="tree__item">
     <summary class="tree__head">
       <span class="tree__dot" aria-hidden="true"></span>
-      <span class="tree__name">${e(x.name)}${x.season ? ` <span class="faint">${e(x.season)}</span>` : ""}</span>
+      <span class="tree__name">${x.mode === "esports" ? "🎮 " : ""}${e(x.name)}${x.season ? ` <span class="faint">${e(x.season)}</span>` : ""}</span>
       <span class="tree__champ">🏆 ${e(x.champion || "—")}</span>
       <span class="pill${x.format === "friendly" ? "" : " pill--gold"}">${x.format === "friendly" ? "Friendly" : "Tournament"}</span>
     </summary>

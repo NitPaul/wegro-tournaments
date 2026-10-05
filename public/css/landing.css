@@ -425,3 +425,10 @@
   font-size: 22px;
   color: var(--gold);
 }
+
+/* A gaming tournament, marked on its card. */
+.phase--game {
+  color: var(--brand-orange-hi);
+  border-color: rgba(241, 93, 44, 0.45);
+  background: rgba(241, 93, 44, 0.1);
+}

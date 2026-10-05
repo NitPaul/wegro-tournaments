@@ -40,6 +40,7 @@ All three are fixed here, and the first two could not have been fixed in place.
 | **Accounts with a User ID** | The super admin creates each account — a User ID and a password — and hands it over. No sign-up form, no approval queue. |
 | **One tournament per admin** | An admin or referee account belongs to a single tournament and cannot see or change any other. Each tournament has a permanent code (`WGT-7F4C2A`) the super admin can follow even after its admin renames it. |
 | **Friendly matches** | A tournament with `format: friendly` — matches and a score, no auction, no table. |
+| **Gaming tournaments** | Mark a tournament as **gaming** and it runs FC 26 instead of football: pairs with their own team name, groups, semi-finals and a final, and penalty shoot-outs. Each person keeps two separate records — one on the pitch, one on the console — each with its own rating. |
 | **Fouls and cards** | Fouls, yellows and reds. They never move the scoreline. Second-yellow warning, red-card suspensions, a fair-play table. |
 | **Auction with faces** | Tap a player's photo to put them on the block; a projector screen at `/auction/<slug>` shows them to the room with their record, the team budgets, and a SOLD card with confetti for each sale. Teams and the auction pool are built by picking people from the roster. |
 | **Player roster** | Everyone who plays, with a photo, a usual position and a rating. Their goals, saves, titles and medals add up across every tournament. The super admin's rating (1–99) is the headline; a rating worked out from stats sits beside it. |
@@ -191,6 +192,36 @@ reported, so you can rename it rather than lose the goal.
 
 **Check the numbers against the old site before trusting it** — standings, top
 scorers, medals and squads should agree exactly.
+
+---
+
+## Running a gaming tournament
+
+The WeGro **FC 26** tournament runs on the same site. Create the tournament and
+choose **Gaming — played on a console**; the Game field defaults to
+"EA SPORTS FC 26" and appears on every page.
+
+What changes, and what does not:
+
+- **Teams are pairs.** On **Setup → Teams**, give each pair a team name, a group
+  (A, B, …, or none), and pick its two players from the roster — so their photos
+  and their records come with them. There is no auction and no positions.
+- **Fixtures.** Choose **Semi-finals, then a final** and press **Generate**: a
+  round robin inside each group, then empty knockout fixtures. **You** say who
+  plays them, on the fixture list. **Seed from the groups** fills in A1 v B2 and
+  B1 v A2 once the groups are finished — a suggestion you can change, never a
+  decision the site makes for you.
+- **Match day** records the score, and a penalty shoot-out when a knockout match
+  finishes level. Nothing is logged per player: in FC 26 the goals are scored by
+  the players inside the game, so a goalscorer list would be fiction.
+- **Everything else is as it was** — the live clock, the public page, the
+  Hall of Fame, and a tournament's own admin who cannot touch any other.
+
+Each person's **gaming profile** (gamer tag, platform, favourite club, and a
+1–99 gaming rating set by the super admin) lives on the Players screen next to
+their football rating. Their player page then shows two cards, **On the pitch**
+and **On FC 26**, which are never added together — winning a 2 v 2 on a console
+and marking a striker for sixteen minutes are not the same achievement.
 
 ---
 

@@ -316,3 +316,16 @@
 .squad__list li .grow {
   flex: 1 1 auto;
 }
+
+/* Plays FC 26 as well — the companion marker to the titles badge. */
+.pc__game {
+  position: absolute;
+  z-index: 1;
+  left: var(--space-3);
+  top: var(--space-3);
+  padding: 3px 7px;
+  border-radius: var(--radius-pill);
+  background: rgba(2, 20, 17, 0.78);
+  font-size: 13px;
+  line-height: 1;
+}

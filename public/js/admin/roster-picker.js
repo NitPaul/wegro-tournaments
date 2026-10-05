@@ -13,7 +13,7 @@ const e = D.escapeHtml;
 let getData = () => null;
 let roster = null;
 
-async function loadRoster(force = false) {
+export async function loadRoster(force = false) {
   if (!roster || force) ({ people: roster } = await people.list());
   return roster;
 }

@@ -116,6 +116,8 @@ export const tournaments = {
   generateFixtures: (tid, body) =>
     api.post(`/tournaments/${encodeURIComponent(tid)}/matches/generate`, body ?? {}),
   addMatch: (tid, body) => api.post(`/tournaments/${encodeURIComponent(tid)}/matches`, body),
+  /** Teams for a gaming tournament: a name, a group, and the pair who play. */
+  addPair: (tid, body) => api.post(`/tournaments/${encodeURIComponent(tid)}/teams`, body),
   updateMatch: (tid, matchId, body) =>
     api.patch(`/tournaments/${encodeURIComponent(tid)}/matches/${matchId}`, body),
   clearMatch: (tid, matchId) => api.post(`/tournaments/${encodeURIComponent(tid)}/matches/${matchId}/clear`),

@@ -191,6 +191,7 @@ function addGameTournament(careerOf, data, archive) {
       g.totals.lost += row.lost;
       g.totals.goalsFor += row.goalsFor;
       g.totals.goalsAgainst += row.goalsAgainst;
+      g.totals.goalDiff = g.totals.goalsFor - g.totals.goalsAgainst;
       g.totals.points += row.points;
       if (champion) g.titles++;
       if (champion || runnerUp) g.finals++;

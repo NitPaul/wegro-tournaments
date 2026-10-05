@@ -718,6 +718,10 @@ tournamentRoutes.post(
       createMatch(req.tournament.id, { no: ++no, stage: "final", isFinal: true });
     }
 
+    // Remember the shape, so the console comes back showing what this
+    // tournament actually is rather than the default.
+    patchSettings(req.tournament.id, { groups: labels.length, knockout });
+
     audit(req, "match.generate", { fixtures: groupFixtures, groups: labels.length, knockout });
     touched(req, res, "matches");
   }),

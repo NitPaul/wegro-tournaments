@@ -50,6 +50,8 @@ const playerOut = (r) => ({
   // path, which only the 2026 captains ever had.
   personId: r.person_id ?? null,
   photo: photoUrl(r.person_photo) ?? r.photo ?? null,
+  // Their name in the game, shown beside them in a gaming tournament.
+  gamerTag: r.gamer_tag ?? null,
 });
 
 const eventOut = (r) => ({
@@ -113,7 +115,7 @@ export function loadTournament(key) {
   const players = {};
   const playerRows = db
     .prepare(
-      `SELECT p.*, pp.photo AS person_photo
+      `SELECT p.*, pp.photo AS person_photo, pp.gamer_tag AS gamer_tag
          FROM players p
          LEFT JOIN people pp ON pp.id = p.person_id
         WHERE p.tournament_id = ?
