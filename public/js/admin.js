@@ -10,12 +10,13 @@
 
 import * as D from "/shared/domain/index.js";
 import { $, $$, confirmPhrase, rememberTab, setHTML, show, toast, wireSiteHeader, wireTabs } from "./ui.js";
-import { auth, serverNow, syncClock, tournaments, transfer, watchTournament } from "./api.js";
+import { auth, people, serverNow, syncClock, tournaments, transfer, watchTournament } from "./api.js";
 import { renderAccounts, wireAccounts } from "./admin/accounts.js";
+import { renderSite, wireSite } from "./admin/site.js";
 import { renderOverview, wireOverview } from "./admin/overview.js";
 import { renderPlayers as renderRoster, tournamentChanged, wirePlayers } from "./admin/players.js";
 import { renderAuctionDesk, sellOnBlock, wireAuctionDesk } from "./admin/auction-desk.js";
-import { renderCaptainPicker, wireRosterPicker } from "./admin/roster-picker.js";
+import { loadRoster, renderCaptainPicker, wireRosterPicker } from "./admin/roster-picker.js";
 
 const e = D.escapeHtml;
 
@@ -39,9 +40,10 @@ async function boot() {
     onChange: (n) => {
       saveTab(n);
       if (n === "players") renderRoster();
+      if (n === "site") renderSite();
       // The tournament bar says which tournament the tabs act on. The super
       // admin's Tournaments and Accounts screens act on none, so hide it there.
-      $("#adminView").classList.toggle("on-global-tab", n === "tournaments" || n === "accounts");
+      $("#adminView").classList.toggle("on-global-tab", ["site", "tournaments", "accounts"].includes(n));
     },
   });
   saveTab = rememberTab("wgt:admintab", selectTab);
@@ -56,6 +58,7 @@ async function boot() {
     refresh: refreshIdentity,
   });
   wireAccounts({ getTournaments: () => myTournaments });
+  wireSite({ toast });
   wirePlayers(() => ({ me, data, perms }));
   wireAuctionDesk(() => data);
   wireRosterPicker(() => data);
@@ -130,6 +133,7 @@ async function refreshIdentity() {
     }
   }
 
+  show($("#tab-site"), isSuper);
   show($("#tab-tournaments"), isSuper);
   show($("#tab-accounts"), isSuper);
   show($("#noTournaments"), !hasOne && !isSuper);
@@ -185,7 +189,8 @@ function applyRole() {
   const canRead = loaded && Boolean(perms.role);
 
   show($("#tab-setup"), canRead && perms.role !== "referee");
-  show($("#tab-auction"), canRead && perms.role !== "referee" && data?.format !== "friendly");
+  const esports = D.isEsports(data);
+  show($("#tab-auction"), canRead && perms.role !== "referee" && data?.format !== "friendly" && !esports);
   show($("#tab-live"), canRead);
   show($("#tab-settings"), canRead && perms.role !== "referee");
   show($("#tab-danger"), loaded && isSuper);
@@ -193,6 +198,11 @@ function applyRole() {
 
   if (loaded) {
     const current = myTournaments.find((t) => t.id === data.id);
+    // A gaming tournament has no auction, no positions and no per-player match
+    // log: in FC 26 the goals are scored by the players in the game.
+    show($("#pairsCard"), esports);
+    show($("#teamsCard"), !esports);
+    show($("#squadCard"), !esports);
     $("#contextName").textContent = data.name;
     $("#contextCode").textContent = data.code ?? current?.code ?? "";
   }
@@ -230,6 +240,7 @@ function applyRole() {
 
 function renderAll() {
   renderTeams();
+  renderPairs();
   renderPlayers();
   renderMatches();
   renderAuctionDesk();
@@ -330,6 +341,49 @@ function renderTeams() {
   );
 }
 
+/** The teams of a gaming tournament: a name, a group, and the two who play. */
+function renderPairs() {
+  if (!D.isEsports(data)) return;
+
+  setHTML(
+    $("#pairList"),
+    D.teamsList(data)
+      .map((t) => {
+        const members = D.teamMembers(data, t.id);
+        return `<div class="staff-row">
+          ${t.group ? `<span class="pill pill--mint">Group ${e(t.group)}</span>` : ""}
+          <input class="input grow" data-team-name="${e(t.id)}" value="${e(t.name)}" maxlength="60" />
+          <span class="faint">${members.map((m) => e(m.name)).join(" &amp; ") || "nobody yet"}</span>
+          <button class="btn btn--sm btn--danger" data-team-del="${e(t.id)}" type="button">Remove</button>
+        </div>`;
+      })
+      .join("") || `<p class="faint">No teams yet. Add the first pair below.</p>`,
+  );
+
+  const taken = new Set(D.playersList(data).map((p) => p.personId).filter(Boolean));
+  const options = (roster) => {
+    const free = roster.filter((p) => !taken.has(p.id));
+    // Say why the list is empty, rather than offering an empty dropdown.
+    return (
+      `<option value="">${free.length ? "— nobody —" : "— everybody is already in a team —"}</option>` +
+      free
+        .map((p) => `<option value="${e(p.id)}">${e(p.name)}${p.game?.gamerTag ? ` (${e(p.game.gamerTag)})` : ""}</option>`)
+        .join("")
+    );
+  };
+
+  // Shared with the roster picker, so a live update does not re-fetch everyone.
+  loadRoster()
+    .then((roster) => {
+      for (const id of ["#newPairOne", "#newPairTwo"]) {
+        const keep = $(id).value;
+        setHTML($(id), options(roster));
+        if (keep) $(id).value = keep;
+      }
+    })
+    .catch(() => {});
+}
+
 function renderPlayers() {
   const rows = D.playersList(data).map((p) => {
     const badge =
@@ -350,21 +404,53 @@ function renderPlayers() {
 }
 
 function renderMatches() {
+  const groups = D.groupLabels(data);
   $("#fixtureHint").textContent =
     data.format === "friendly"
       ? "Friendlies have no table and no final — add matches as you arrange them."
-      : "A round robin plays everyone once, then a final between the top two.";
+      : groups.length
+        ? `Everyone plays everyone inside their own group (${groups.join(", ")}), then the knockout rounds you choose. You pick who plays whom in those.`
+        : "A round robin plays everyone once, then the knockout rounds you choose.";
+
+  // Seeding is a suggestion, so it only appears once there is something to
+  // suggest: the semi-finals after the groups, then the final after the semis.
+  const semis = D.knockoutMatches(data).filter((m) => D.stageOf(m) === "semi");
+  const final = D.finalMatch(data);
+  const finalReady = Boolean(D.finalists(data)) && final && !final.homeId && !final.awayId;
+  show($("#seedKnockout"), finalReady || (semis.length > 0 && D.groupStageComplete(data)));
+  $("#seedKnockout").textContent = finalReady ? "Set the final from the semi-finals" : "Seed from the groups";
+
+  // Come back to the shape this tournament was generated with.
+  $("#knockoutChoice").value = D.getSettings(data).knockout ?? "final";
 
   setHTML(
     $("#matchList"),
     D.matchesList(data)
       .map((m) => {
         const { homeLabel, awayLabel } = D.matchSides(data, m);
+        const stage = D.stageOf(m);
+        const teamOptions = (selectedId) =>
+          `<option value="">— to be decided —</option>` +
+          D.teamsList(data)
+            .map((t) => `<option value="${e(t.id)}"${t.id === selectedId ? " selected" : ""}>${e(t.name)}</option>`)
+            .join("");
+
+        // A knockout match names its two sides, and the admin chooses them.
+        const sides =
+          stage === "group"
+            ? `<span class="grow">${e(homeLabel)} v ${e(awayLabel)}</span>`
+            : `<span class="grow row">
+                 <select class="input input--sm" data-match-side="home" data-match="${e(m.id)}">${teamOptions(m.homeId)}</select>
+                 <span class="faint">v</span>
+                 <select class="input input--sm" data-match-side="away" data-match="${e(m.id)}">${teamOptions(m.awayId)}</select>
+               </span>`;
+
         return `<div class="staff-row">
           <span class="faint" style="min-width:28px">${m.no}</span>
-          <span class="grow">${e(homeLabel)} v ${e(awayLabel)}${m.isFinal ? " (final)" : ""}</span>
+          ${stage === "group" ? "" : `<span class="pill pill--gold">${e(D.STAGE_LABEL[stage])}</span>`}
+          ${sides}
           <span class="pill">${e(D.STATUS_LABEL[m.status] ?? m.status)}</span>
-          <span class="faint">${m.homeScore ?? "–"} : ${m.awayScore ?? "–"}</span>
+          <span class="faint">${D.scoreLine(m) || "– : –"}</span>
           <button class="btn btn--sm btn--ghost" data-match-clear="${e(m.id)}" type="button">Clear</button>
         </div>`;
       })
@@ -397,6 +483,10 @@ function renderLive() {
   const { home, away, homeLabel, awayLabel } = D.matchSides(data, match);
   const state = D.clockState(match, serverNow());
   const suspended = D.suspendedFor(data, match.id);
+
+  const esports = D.isEsports(data);
+  const knockout = D.isKnockout(match);
+  const level = match.homeScore != null && match.homeScore === match.awayScore;
 
   const actionsFor = (team, label) => {
     if (!team) return `<p class="faint">${e(label)} is not decided yet.</p>`;
@@ -435,6 +525,28 @@ function renderLive() {
          <button class="btn btn--ghost" id="matchFT" type="button">Full time</button>
        </div>
        ${
+         esports
+           ? `<p class="faint score-entry__hint">The score, as it stands. It saves as you type and shows on the public page straight away.</p>
+              <div class="score-entry">
+                <label class="field"><span>${e(homeLabel)}</span>
+                  <input class="input input--score" type="number" min="0" placeholder="0" inputmode="numeric" data-score="home" value="${match.homeScore ?? ""}" /></label>
+                <label class="field"><span>${e(awayLabel)}</span>
+                  <input class="input input--score" type="number" min="0" placeholder="0" inputmode="numeric" data-score="away" value="${match.awayScore ?? ""}" /></label>
+              </div>`
+           : ""
+       }
+       ${
+         knockout && level
+           ? `<div class="score-entry score-entry--pens">
+                <p class="faint">A knockout match cannot end level. Record the shoot-out.</p>
+                <label class="field"><span>${e(homeLabel)} penalties</span>
+                  <input class="input input--score" type="number" min="0" inputmode="numeric" data-pens="home" placeholder="0" value="${match.homePens ?? ""}" /></label>
+                <label class="field"><span>${e(awayLabel)} penalties</span>
+                  <input class="input input--score" type="number" min="0" inputmode="numeric" data-pens="away" placeholder="0" value="${match.awayPens ?? ""}" /></label>
+              </div>`
+           : ""
+       }
+       ${
          suspended.size
            ? `<p class="faint">⚠ Suspended for this match: ${[...suspended.values()]
                .map((s) => e(s.player.name))
@@ -442,8 +554,12 @@ function renderLive() {
            : ""
        }
      </div>
-     <div class="cols-2">${actionsFor(home, homeLabel)}${actionsFor(away, awayLabel)}</div>`,
+     ${esports ? "" : `<div class="cols-2">${actionsFor(home, homeLabel)}${actionsFor(away, awayLabel)}</div>`}`,
   );
+
+  // The match log belongs to football; FC 26 records results, not goalscorers.
+  show($("#liveEvents").closest(".card"), !esports);
+  if (esports) return setHTML($("#liveEvents"), "");
 
   setHTML(
     $("#liveEvents"),
@@ -574,6 +690,43 @@ function wireConsole() {
     if (!data) return;
 
     // --- setup
+    if (t.id === "addPair") {
+      const name = $("#newPairName").value.trim();
+      if (!name) return toast("Give the team a name.", "err");
+      const memberIds = [$("#newPairOne").value, $("#newPairTwo").value].filter(Boolean);
+      if (!memberIds.length) return toast("Pick at least one player for the team.", "err");
+      return run(async () => {
+        await tournaments.addPair(data.id, { name, group: $("#newPairGroup").value || null, memberIds });
+        $("#newPairName").value = "";
+        $("#newPairOne").value = "";
+        $("#newPairTwo").value = "";
+      }, `${name} added.`);
+    }
+
+    if (t.id === "seedKnockout") {
+      const semis = D.knockoutMatches(data).filter((m) => D.stageOf(m) === "semi");
+      const final = D.finalMatch(data);
+      const blank = (m) => m && !m.homeId && !m.awayId;
+
+      // Once the semis are won, the obvious thing to fill in is the final.
+      const pair = D.finalists(data);
+      if (pair && blank(final)) {
+        const name = (id) => D.teamById(data, id)?.name ?? "";
+        if (!confirm(`Set the final to ${name(pair.homeId)} v ${name(pair.awayId)}?`)) return;
+        return run(() => tournaments.updateMatch(data.id, final.id, pair), "Final set from the semi-finals.");
+      }
+
+      const seeds = D.seedKnockout(data);
+      if (!seeds.length) return toast("Finish the group matches first.", "err");
+      if (!confirm(`Set the semi-finals to ${seeds.map((x) => `${x.homeLabel} v ${x.awayLabel}`).join(" and ")}?`)) return;
+      return run(async () => {
+        for (const [i, semi] of semis.entries()) {
+          if (!seeds[i]) break;
+          await tournaments.updateMatch(data.id, semi.id, { homeId: seeds[i].homeId, awayId: seeds[i].awayId });
+        }
+      }, "Semi-finals seeded. Change them if you want a different pairing.");
+    }
+
     if (t.id === "addTeam") {
       const name = $("#newTeamName").value.trim();
       if (!name) return toast("Give the team a name.", "err");
@@ -609,8 +762,11 @@ function wireConsole() {
       return run(() => tournaments.removePlayer(data.id, t.dataset.playerDel), "Player removed.");
     }
     if (t.id === "generateFixtures") {
-      if (!confirm("Generate the fixture list? Existing fixtures are replaced.")) return;
-      return run(() => tournaments.generateFixtures(data.id), "Fixtures generated.");
+      const knockout = $("#knockoutChoice").value;
+      const groups = D.groupLabels(data);
+      const how = groups.length ? `a round robin inside ${D.plural(groups.length, "group")}` : "a round robin";
+      if (!confirm(`Generate ${how}${knockout === "none" ? "" : knockout === "semis" ? ", semi-finals and a final" : " and a final"}? Existing fixtures are replaced.`)) return;
+      return run(() => tournaments.generateFixtures(data.id, { knockout }), "Fixtures generated.");
     }
     if (t.id === "addMatch") return run(() => tournaments.addMatch(data.id, {}), "Match added.");
     if (t.dataset.matchClear) {
@@ -836,7 +992,45 @@ function wireConsole() {
     }
   });
 
-  $("#teamList").addEventListener("change", async (ev) => {
+  // Who plays in a knockout round, chosen by the admin on the fixture list.
+  $("#matchList").addEventListener("change", async (ev) => {
+    const el = ev.target.closest("[data-match-side]");
+    if (!el || !data) return;
+    try {
+      await tournaments.updateMatch(data.id, el.dataset.match, {
+        [el.dataset.matchSide === "home" ? "homeId" : "awayId"]: el.value || null,
+      });
+      toast("Fixture set.");
+    } catch (err) {
+      toast(err.message, "err");
+    }
+  });
+
+  // The score and the shoot-out on a gaming match day.
+  $("#console").addEventListener("change", async (ev) => {
+    const el = ev.target.closest("[data-score], [data-pens]");
+    if (!el || !data) return;
+    const value = el.value === "" ? null : Number(el.value);
+    const key = el.dataset.score
+      ? el.dataset.score === "home"
+        ? "homeScore"
+        : "awayScore"
+      : el.dataset.pens === "home"
+        ? "homePens"
+        : "awayPens";
+    try {
+      await tournaments.updateMatch(data.id, liveMatchId, { [key]: value });
+      toast("Saved.");
+    } catch (err) {
+      toast(err.message, "err");
+    }
+  });
+
+  for (const id of ["#teamList", "#pairList"]) {
+    $(id).addEventListener("change", renameTeam);
+  }
+
+  async function renameTeam(ev) {
     const el = ev.target.closest("[data-team-name]");
     if (!el) return;
     try {
@@ -845,7 +1039,7 @@ function wireConsole() {
     } catch (err) {
       toast(err.message, "err");
     }
-  });
+  }
 }
 
 /**

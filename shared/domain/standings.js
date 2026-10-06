@@ -8,7 +8,16 @@
  * seed data. This works for any number of teams.
  */
 
-import { finalMatch, groupMatches, isPlayed, isFriendly, teamById, teamsList } from "./helpers.js";
+import {
+  finalMatch,
+  groupLabels,
+  groupMatches,
+  isFriendly,
+  isPlayed,
+  teamById,
+  teamsInGroup,
+  teamsList,
+} from "./helpers.js";
 
 /**
  * Tiebreaks, in order: Points → Goal Difference → Goals For → head-to-head →
@@ -20,11 +29,16 @@ import { finalMatch, groupMatches, isPlayed, isFriendly, teamById, teamsList } f
  * final fallback purely so the order is deterministic — two renders of the same
  * data must never disagree.
  */
-export function standings(data) {
-  const played = groupMatches(data).filter(isPlayed);
+export function standings(data, { group = null } = {}) {
+  const teams = teamsInGroup(data, group);
+  const inTable = new Set(teams.map((t) => t.id));
+  // A group's table counts only the matches played inside that group.
+  const played = groupMatches(data)
+    .filter(isPlayed)
+    .filter((m) => !group || (inTable.has(m.homeId) && inTable.has(m.awayId)));
   const rows = {};
 
-  for (const t of teamsList(data)) {
+  for (const t of teams) {
     rows[t.id] = {
       teamId: t.id,
       team: t,
@@ -104,21 +118,43 @@ export function standings(data) {
   return list;
 }
 
-/** True once every group match is full-time — the final can then be seeded. */
+/** True once every group match is full-time — the knockout can then be seeded. */
 export const groupStageComplete = (data) => {
   const gm = groupMatches(data);
   return gm.length > 0 && gm.every(isPlayed);
 };
 
+/** One table per group, or a single table when no groups are in use. */
+export function groupTables(data) {
+  const labels = groupLabels(data);
+  if (!labels.length) return [{ group: null, table: standings(data) }];
+  return labels.map((group) => ({ group, table: standings(data, { group }) }));
+}
+
 /**
  * Resolve a match's two sides.
  *
- * For the final this derives the finalists from the table rather than reading
- * stored ids, so correcting a group result re-seeds the final automatically
- * instead of leaving a stale pairing behind.
+ * A match that names its teams uses them — that is the organiser's decision,
+ * including the knockout pairings they choose. Only a final left blank derives
+ * its finalists from the table, so correcting a group result re-seeds it
+ * automatically instead of leaving a stale pairing behind. That is how every
+ * football tournament here has worked, and it still does.
  */
 export function matchSides(data, match) {
   if (!match) return { home: null, away: null, homeLabel: "—", awayLabel: "—", derived: false };
+
+  const named = teamById(data, match.homeId) || teamById(data, match.awayId);
+  if (named) {
+    const home = teamById(data, match.homeId);
+    const away = teamById(data, match.awayId);
+    return {
+      home,
+      away,
+      homeLabel: home?.name || "TBD",
+      awayLabel: away?.name || "TBD",
+      derived: false,
+    };
+  }
 
   if (match.isFinal) {
     if (groupStageComplete(data)) {
@@ -179,13 +215,22 @@ export function champion(data) {
   const { home, away } = matchSides(data, f);
   const hs = Number(f.homeScore);
   const as = Number(f.awayScore);
-  if (hs === as) return null; // a knockout cannot be drawn; the console warns
+  // A final can end level on the night; the shoot-out is what decides it. Until
+  // that is recorded there is no champion, and the console says so.
+  const level = hs === as;
+  const hp = Number(f.homePens);
+  const ap = Number(f.awayPens);
+  const onPenalties = level && Number.isFinite(hp) && Number.isFinite(ap) && hp !== ap;
+  if (level && !onPenalties) return null;
 
+  const homeWon = onPenalties ? hp > ap : hs > as;
   return {
-    winner: hs > as ? home : away,
-    runnerUp: hs > as ? away : home,
-    decidedBy: "final",
-    finalScore: `${Math.max(hs, as)}–${Math.min(hs, as)}`,
+    winner: homeWon ? home : away,
+    runnerUp: homeWon ? away : home,
+    decidedBy: onPenalties ? "penalties" : "final",
+    finalScore: onPenalties
+      ? `${hs}–${as} (${Math.max(hp, ap)}–${Math.min(hp, ap)} on pens)`
+      : `${Math.max(hs, as)}–${Math.min(hs, as)}`,
   };
 }
 

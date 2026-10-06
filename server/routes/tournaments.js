@@ -111,18 +111,24 @@ tournamentRoutes.post(
     if (name.length > 80) throw badRequest("That name is too long — 80 characters at most.");
 
     const format = req.body?.format === "friendly" ? "friendly" : "league";
+    // A gaming tournament is an ordinary tournament that happens to be played
+    // on a console: same teams, fixtures, table and champion.
+    const mode = req.body?.mode === "esports" ? "esports" : "field";
+    const game = mode === "esports" ? String(req.body?.game ?? "").trim().slice(0, 60) || "EA SPORTS FC 26" : null;
 
     const row = createTournament({
       name,
       season: String(req.body?.season ?? "").trim(),
       format,
+      mode,
+      game,
       startsOn: req.body?.startsOn || null,
       meta: { ...D.DEFAULT_META, ...(req.body?.meta ?? {}) },
       settings: { ...D.DEFAULT_SETTINGS, ...(req.body?.settings ?? {}) },
       userId: req.user.id,
     });
 
-    audit(req, "tournament.create", { name, format }, row.id);
+    audit(req, "tournament.create", { name, format, mode, game }, row.id);
     res.status(201).json({ tournament: loadTournament(row.id) });
   }),
 );
@@ -154,6 +160,34 @@ tournamentRoutes.get(
   }),
 );
 
+/**
+ * This tournament as JSON, downloaded by the people running it.
+ *
+ * Its own admin can take it — it is their tournament, and the copy they want
+ * after the auction and again before kick-off is this one. The whole-site
+ * backup, which has every tournament and every account in it, stays with the
+ * super admin under /api/site.
+ */
+tournamentRoutes.get(
+  "/:tid/export",
+  requireTournament("admin"),
+  route(async (req, res) => {
+    const data = loadTournament(req.tournament.id);
+    const filename = `${data.slug || "tournament"}-${new Date().toISOString().slice(0, 10)}.json`;
+    audit(req, "export.tournament", { name: data.name });
+
+    res.setHeader("Content-Type", "application/json; charset=utf-8");
+    res.setHeader("Content-Disposition", `attachment; filename="${filename}"`);
+    res.send(
+      JSON.stringify(
+        { _format: "wegro-tournaments-single", _version: 1, _exportedAt: new Date().toISOString(), tournament: data },
+        null,
+        2,
+      ),
+    );
+  }),
+);
+
 tournamentRoutes.patch(
   "/:tid",
   requireTournament("admin"),
@@ -177,12 +211,18 @@ tournamentRoutes.patch(
 
     // Status and format change what a tournament IS, so they are the super
     // admin's call, not a tournament admin's.
-    for (const key of ["status", "format"]) {
+    for (const key of ["status", "format", "mode"]) {
       if (req.body?.[key] !== undefined) {
         if (!req.user.isSuper) throw forbidden(`Only the super admin can change the ${key}.`);
         patch[key] = req.body[key];
       }
     }
+    if (patch.mode !== undefined && !D.MODES.includes(patch.mode)) {
+      throw badRequest("A tournament is either football or gaming.");
+    }
+    // The game's name belongs to whoever runs the tournament, not only the super
+    // admin: it is a label, like the venue.
+    if (req.body?.game !== undefined) patch.game = String(req.body.game ?? "").trim().slice(0, 60) || null;
 
     if (patch.status === "completed") {
       patch.completedAt = Date.now();
@@ -307,13 +347,34 @@ tournamentRoutes.post(
     const name = String(req.body?.name ?? "").trim();
     if (!name) throw badRequest("Give the team a name.");
 
+    const group = String(req.body?.group ?? "").trim().slice(0, 12) || null;
+
     const id = createTeam(req.tournament.id, {
       name,
       slot: String(req.body?.slot ?? "").trim(),
       jerseyColor: req.body?.jerseyColor ?? null,
       jerseyLabel: String(req.body?.jerseyLabel ?? ""),
       jerseyCost: Number(req.body?.jerseyCost ?? 0),
+      group,
     });
+
+    // A pair on one console, or any set of people who make up this team. They
+    // arrive from the roster, so their photos and records come with them.
+    const memberIds = Array.isArray(req.body?.memberIds) ? [...new Set(req.body.memberIds.map(String))] : [];
+    const memberNames = [];
+    for (const personId of memberIds.slice(0, 8)) {
+      const person = getPerson(personId);
+      if (!person) throw notFoundError("One of those players is not on the roster.");
+      createPlayer(req.tournament.id, {
+        name: person.name,
+        pos: person.pos ?? "MID",
+        teamId: id,
+        price: 0,
+        kind: "auction",
+        personId: person.id,
+      });
+      memberNames.push(person.name);
+    }
 
     // A captain can be named at the same moment, which is how teams are
     // actually created — nobody adds a team and then wonders who leads it.
@@ -332,7 +393,7 @@ tournamentRoutes.post(
       });
     }
 
-    audit(req, "team.create", { name, captain });
+    audit(req, "team.create", { name, group, captain, members: memberNames });
     touched(req, res, "teams", { teamId: id });
   }),
 );
@@ -616,14 +677,18 @@ tournamentRoutes.post(
   "/:tid/matches",
   requireTournament("admin"),
   route(async (req, res) => {
+    const stage = cleanStage(req.body?.stage);
     const id = createMatch(req.tournament.id, {
       no: Number(req.body?.no) || nextMatchNumber(req.tournament.id),
       homeId: req.body?.homeId || null,
       awayId: req.body?.awayId || null,
-      isFinal: Boolean(req.body?.isFinal),
+      // The final is flagged both ways: `stage` for the rounds, `isFinal`
+      // because that is what champion() and the hall of fame have always read.
+      isFinal: stage === "final" || Boolean(req.body?.isFinal),
       kickoff: req.body?.kickoff || null,
+      stage,
     });
-    audit(req, "match.create", { matchId: id });
+    audit(req, "match.create", { matchId: id, stage });
     touched(req, res, "matches", { matchId: id });
   }),
 );
@@ -647,23 +712,45 @@ tournamentRoutes.post(
       );
     }
 
-    const teamIds = D.teamsList(data).map((t) => t.id);
-    if (teamIds.length < 2) throw badRequest("Add at least two teams first.");
+    const teams = D.teamsList(data);
+    if (teams.length < 2) throw badRequest("Add at least two teams first.");
 
     for (const m of D.matchesList(data)) deleteMatch(m.id);
 
-    const fixtures = D.roundRobin(teamIds);
-    for (const f of fixtures) {
-      createMatch(req.tournament.id, { no: f.no, homeId: f.homeId, awayId: f.awayId });
+    // Everyone plays everyone — inside their own group, where there are groups.
+    const labels = D.groupLabels(data);
+    const pools = labels.length ? labels.map((g) => D.teamsInGroup(data, g).map((t) => t.id)) : [teams.map((t) => t.id)];
+
+    let no = 0;
+    for (const pool of pools) {
+      for (const f of D.roundRobin(pool)) {
+        createMatch(req.tournament.id, { no: ++no, homeId: f.homeId, awayId: f.awayId, stage: "group" });
+      }
+    }
+    const groupFixtures = no;
+
+    // How it is decided: nothing, a final, or semi-finals and then a final.
+    // The knockout fixtures are created empty — who plays whom is the
+    // organiser's call, and the console offers the usual seeding as a suggestion.
+    const knockout = ["none", "final", "semis"].includes(req.body?.knockout)
+      ? req.body.knockout
+      : (req.body?.withFinal ?? data.format === "league")
+        ? "final"
+        : "none";
+
+    if (knockout === "semis") {
+      createMatch(req.tournament.id, { no: ++no, stage: "semi" });
+      createMatch(req.tournament.id, { no: ++no, stage: "semi" });
+    }
+    if (knockout !== "none") {
+      createMatch(req.tournament.id, { no: ++no, stage: "final", isFinal: true });
     }
 
-    // A league finishes with a final between the top two. A friendly does not.
-    const wantsFinal = req.body?.withFinal ?? data.format === "league";
-    if (wantsFinal) {
-      createMatch(req.tournament.id, { no: fixtures.length + 1, isFinal: true });
-    }
+    // Remember the shape, so the console comes back showing what this
+    // tournament actually is rather than the default.
+    patchSettings(req.tournament.id, { groups: labels.length, knockout });
 
-    audit(req, "match.generate", { fixtures: fixtures.length, withFinal: Boolean(wantsFinal) });
+    audit(req, "match.generate", { fixtures: groupFixtures, groups: labels.length, knockout });
     touched(req, res, "matches");
   }),
 );
@@ -698,7 +785,26 @@ tournamentRoutes.patch(
     }
     if (req.body?.clock !== undefined) patch.clock = req.body.clock;
 
-    // Fixtures and kick-off times are setup, not match day.
+    // The shoot-out. A referee records it, because it happens on match day and
+    // it is the only thing that can settle a level knockout match.
+    for (const key of ["homePens", "awayPens"]) {
+      if (req.body?.[key] !== undefined) {
+        const value = req.body[key];
+        patch[key] = value === null || value === "" ? null : Number(value);
+        if (patch[key] !== null && (!Number.isInteger(patch[key]) || patch[key] < 0)) {
+          throw badRequest("A shoot-out score must be a whole number, zero or more.");
+        }
+      }
+    }
+
+    // Fixtures, stages and kick-off times are setup, not match day.
+    if (req.body?.stage !== undefined) {
+      if (req.tournamentRole === "referee") {
+        throw forbidden("Referees can record scores. Changing the round a match belongs to is an admin job.");
+      }
+      patch.stage = cleanStage(req.body.stage);
+      patch.isFinal = patch.stage === "final";
+    }
     for (const key of ["homeId", "awayId", "kickoff", "no"]) {
       if (req.body?.[key] !== undefined) {
         if (req.tournamentRole === "referee") {
@@ -857,3 +963,11 @@ tournamentRoutes.post(
     res.json({ archive: row });
   }),
 );
+
+/** 'group', 'semi', 'final' — or null, which means the group stage. */
+function cleanStage(raw) {
+  if (raw === undefined || raw === null || raw === "") return null;
+  const stage = String(raw);
+  if (!D.STAGES.includes(stage)) throw badRequest("A match is in the group stage, a semi-final, or the final.");
+  return stage;
+}

@@ -116,6 +116,8 @@ export const tournaments = {
   generateFixtures: (tid, body) =>
     api.post(`/tournaments/${encodeURIComponent(tid)}/matches/generate`, body ?? {}),
   addMatch: (tid, body) => api.post(`/tournaments/${encodeURIComponent(tid)}/matches`, body),
+  /** Teams for a gaming tournament: a name, a group, and the pair who play. */
+  addPair: (tid, body) => api.post(`/tournaments/${encodeURIComponent(tid)}/teams`, body),
   updateMatch: (tid, matchId, body) =>
     api.patch(`/tournaments/${encodeURIComponent(tid)}/matches/${matchId}`, body),
   clearMatch: (tid, matchId) => api.post(`/tournaments/${encodeURIComponent(tid)}/matches/${matchId}/clear`),
@@ -182,8 +184,19 @@ export const archive = {
 export const transfer = {
   /** Import a parsed backup from the old Firebase site. */
   firebase: (backup, options = {}) => api.post("/import/firebase", { backup, ...options }),
-  /** A download URL rather than a fetch — the browser saves the file itself. */
-  exportUrl: (tid) => `/api/import/export/${encodeURIComponent(tid)}`,
+  /**
+   * A download URL rather than a fetch — the browser saves the file itself,
+   * with the name the server put in Content-Disposition.
+   */
+  exportUrl: (tid) => `/api/tournaments/${encodeURIComponent(tid)}/export`,
+};
+
+/** The whole site: what is in it, how it is set up, and copies of all of it. */
+export const site = {
+  overview: () => api.get("/site/overview"),
+  /** Write a backup into the server's own backup folder. */
+  backupOnServer: () => api.post("/site/backup", {}),
+  downloadUrl: (kind) => `/api/site/backup.${kind}`,
 };
 
 /* -------------------------------------------------------------- live sync */

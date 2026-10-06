@@ -4,18 +4,22 @@ import { db, newId, transaction } from "../index.js";
 
 /* ------------------------------------------------------------------ teams */
 
-export function createTeam(tournamentId, { name, slot = "", jerseyColor = null, jerseyLabel = "", jerseyCost = 0, squadSize = null }) {
+export function createTeam(
+  tournamentId,
+  { name, slot = "", jerseyColor = null, jerseyLabel = "", jerseyCost = 0, squadSize = null, group = null },
+) {
   const id = newId("tm");
   const { n } = db.prepare("SELECT COUNT(*) AS n FROM teams WHERE tournament_id = ?").get(tournamentId);
   db.prepare(
-    `INSERT INTO teams (id, tournament_id, slot, name, jersey_color, jersey_label, jersey_cost, squad_size, sort_order)
-     VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)`,
-  ).run(id, tournamentId, slot || String.fromCharCode(65 + n), name, jerseyColor, jerseyLabel, jerseyCost, squadSize, n);
+    `INSERT INTO teams (id, tournament_id, slot, name, jersey_color, jersey_label, jersey_cost, squad_size, sort_order, group_label)
+     VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+  ).run(id, tournamentId, slot || String.fromCharCode(65 + n), name, jerseyColor, jerseyLabel, jerseyCost, squadSize, n, group);
   return id;
 }
 
 const TEAM_COLUMNS = {
   name: "name",
+  group: "group_label",
   slot: "slot",
   jerseyColor: "jersey_color",
   jerseyLabel: "jersey_label",

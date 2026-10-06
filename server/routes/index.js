@@ -13,12 +13,12 @@ import express from "express";
 import { archiveRoutes } from "./archive.js";
 import { authRoutes } from "./auth.js";
 import { peopleRoutes } from "./people.js";
+import { siteRoutes } from "./site.js";
 import { streamRoutes } from "./stream.js";
 import { tournamentRoutes } from "./tournaments.js";
 import { transferRoutes } from "./transfer.js";
 import { userRoutes } from "./users.js";
 import { pruneExpiredSessions } from "../auth/session.js";
-import { siteTotals } from "../roster.js";
 import { streamStats } from "../stream/sse.js";
 
 export function mountRoutes(app) {
@@ -28,11 +28,9 @@ export function mountRoutes(app) {
     res.json({ ok: true, streams: streamStats() });
   });
 
-  // The landing page's headline numbers. Cached with the roster, so cheap.
-  api.get("/site", (req, res) => {
-    res.json({ totals: siteTotals() });
-  });
-
+  // The landing page's headline numbers are the public part of this router;
+  // everything else under /site belongs to the super admin.
+  api.use("/site", siteRoutes);
   api.use("/auth", authRoutes);
   api.use("/users", userRoutes);
   api.use("/tournaments", tournamentRoutes);

@@ -55,7 +55,7 @@
              (96px + rest), so the text must live in its own child or the
              headline gets squeezed into the crest's column. -->
         <section class="hero">
-          <img class="hero__crest" src="/assets/crest.png" alt="" width="639" height="639" />
+          <div id="heroCrest"><img class="hero__crest" src="/assets/crest.png" alt="" width="639" height="639" /></div>
           <div class="hero__text">
             <p class="eyebrow" id="heroEyebrow"></p>
             <h1 class="hero__title" id="heroTitle"></h1>
@@ -76,10 +76,10 @@
 
         <section class="panel" id="panel-overview" role="tabpanel" aria-labelledby="tab-overview">
           <div class="cols-2">
-            <div class="card"><h2 class="card__title">Captains</h2><div id="captains"></div></div>
+            <div class="card"><h2 class="card__title" id="captainsTitle">Captains</h2><div id="captains"></div></div>
             <div class="stack">
               <div class="card"><h2 class="card__title">Next up</h2><div id="nextUp"></div></div>
-              <div class="card"><h2 class="card__title">Leaderboard</h2><div id="miniTable"></div></div>
+              <div class="card"><h2 class="card__title">Leaderboard</h2><div id="miniTables"></div></div>
             </div>
           </div>
           <div class="card" id="venueCard" hidden><h2 class="card__title">Venue &amp; dates</h2><dl class="deflist" id="venue"></dl></div>
@@ -90,11 +90,12 @@
         </section>
 
         <section class="panel" id="panel-standings" role="tabpanel" aria-labelledby="tab-standings" hidden>
-          <div class="card"><h2 class="card__title">Standings</h2><div class="table-scroll" id="table"></div></div>
+          <div id="tables"></div>
+          <div class="card" id="knockoutCard" hidden><h2 class="card__title">Knockout</h2><div id="knockout"></div></div>
         </section>
 
         <section class="panel" id="panel-squads" role="tabpanel" aria-labelledby="tab-squads" hidden>
-          <div class="card"><h2 class="card__title">Auction</h2><div id="auctionProgress"></div></div>
+          <div class="card" id="auctionCard"><h2 class="card__title">Auction</h2><div id="auctionProgress"></div></div>
           <div id="squads"></div>
           <div class="card" id="poolCard" hidden><h2 class="card__title">Still unsold</h2><div id="pool"></div></div>
         </section>

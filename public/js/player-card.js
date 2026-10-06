@@ -49,6 +49,7 @@ export function playerCard(person, { index = 0 } = {}) {
         <small>${h.source === "stats" ? "stats" : person.pos ? e(person.pos) : "&nbsp;"}</small>
       </span>
       ${person.titles ? `<span class="pc__titles" title="${D.plural(person.titles, "title")}">🏆${person.titles > 1 ? ` ×${person.titles}` : ""}</span>` : ""}
+      ${playsGame(person) ? `<span class="pc__game" title="Plays ${e(person.game?.tournaments?.[0]?.game || "FC 26")}">🎮</span>` : ""}
     </span>
     <span class="pc__body">
       <span class="pc__name">${e(person.name)}</span>
@@ -57,6 +58,10 @@ export function playerCard(person, { index = 0 } = {}) {
     </span>
   </a>`;
 }
+
+/** Whether a person has an FC 26 half worth showing. */
+export const playsGame = (person) =>
+  Boolean(person?.game && (person.game.totals?.matches || person.game.rating != null || person.game.gamerTag));
 
 /** Strongest first: rated players by rating, then by what they have done. */
 export function byStrength(a, b) {

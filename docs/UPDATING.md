@@ -79,13 +79,23 @@ It runs once, in order, inside a transaction, tracked by SQLite's own
 `user_version`. If it fails, nothing is applied and the server refuses to start
 with the reason. Write them so they can only run once.
 
+**Keep them additive.** `ALTER TABLE ... ADD COLUMN` accepts a `CHECK` and a
+`NOT NULL` with a default, which is enough for almost everything;
+`003-esports.sql` added nine columns across four tables that way, so no existing
+row was rewritten and the 2026 tournament could not be touched by it. Rebuilding
+a table is the one thing worth avoiding — and if you must, run it against a copy
+of the live backup first and compare the standings, the medals and the Hall of
+Fame before and after.
+
 ## Rules for not ruining a match day
 
 - **Never deploy on the day of a tournament.** Not the morning of, not "just a
   small fix". Freeze the code the day before.
 - **Do a practice run the day before**: create a throwaway tournament, add two
   teams, start the clock, log a goal and a card, delete it.
-- **Take a backup before kick-off**, from Danger → Download a copy.
+- **Take a backup before kick-off**: the tournament's own, from its Settings →
+  Download a copy of this tournament, and the whole site from Site → Take a copy
+  of everything. Put the second one somewhere that is not the server.
 - **Do not change `SESSION_SECRET`** unless you intend to sign everybody out.
 - **Do not touch the medal overrides mid-tournament** unless you mean it — an
   override wins over the computed winner and the card will say so.
@@ -95,8 +105,10 @@ with the reason. Write them so they can only run once.
 | You want to change | Look in |
 |---|---|
 | A scoring rule, a tiebreak, an auction guard | `shared/domain/` |
+| Groups, knockout rounds, penalties, what a gaming tournament is | `shared/domain/knockout.js`, `standings.js`, `helpers.js` |
 | What an endpoint does, or who may call it | `server/routes/` |
 | A SQL query | `server/db/repo/` |
+| Backups, the Site screen, what the console reports about the server | `server/routes/site.js`, `server/zip.js`, `public/js/admin/site.js` |
 | The landing page | `public/index.html`, `public/js/landing.js`, `public/css/landing.css` |
 | A tournament's scoreboard (`/t/<slug>`) | `public/tournament.html`, `public/js/tournament.js` |
 | The player list and profiles | `public/players.html`, `public/js/players.js`, `public/js/player-card.js`, `public/css/players.css` |

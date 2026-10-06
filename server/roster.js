@@ -8,8 +8,8 @@
  * Hidden (draft) tournaments are left out, as they are everywhere public.
  */
 
-import { buildCareers, CAREER_FIELDS } from "../shared/domain/career.js";
-import { headlineRating, ratingBand, statsRating } from "../shared/domain/rating.js";
+import { buildCareers, CAREER_FIELDS, GAME_FIELDS } from "../shared/domain/career.js";
+import { gameHeadlineRating, gameStatsRating, headlineRating, ratingBand, statsRating } from "../shared/domain/rating.js";
 import { listArchive } from "./db/repo/archive.js";
 import { listPeople } from "./db/repo/people.js";
 import { listTournaments, loadTournament } from "./db/repo/tournaments.js";
@@ -30,11 +30,20 @@ function compute() {
     .map((t) => loadTournament(t.id));
   const careers = buildCareers(tournaments, listArchive());
 
-  const empty = { totals: Object.fromEntries([["matches", 0], ...CAREER_FIELDS.map((f) => [f, 0])]), tournaments: [], medals: [], titles: 0 };
+  const emptyGame = { totals: Object.fromEntries(GAME_FIELDS.map((f) => [f, 0])), tournaments: [], titles: 0, finals: 0 };
+  const empty = {
+    totals: Object.fromEntries([["matches", 0], ...CAREER_FIELDS.map((f) => [f, 0])]),
+    tournaments: [],
+    medals: [],
+    titles: 0,
+    game: emptyGame,
+  };
 
   const people = listPeople().map((p) => {
     const career = careers.get(p.id) ?? empty;
     const headline = headlineRating(p, career.totals);
+    const game = career.game ?? emptyGame;
+    const gameHeadline = gameHeadlineRating(p, game.totals);
     return {
       id: p.id,
       name: p.name,
@@ -50,6 +59,22 @@ function compute() {
       medals: career.medals,
       tournaments: career.tournaments,
       createdBy: p.createdBy,
+      // The console half of a person: who they are in the game, how they have
+      // done there, and a rating of their own. Kept apart from the pitch record
+      // on purpose — they measure different things.
+      game: {
+        gamerTag: p.gamerTag,
+        platform: p.platform,
+        favClub: p.favClub,
+        rating: p.gameRating,
+        ratingNote: p.gameRatingNote,
+        statsRating: gameStatsRating(game.totals),
+        headline: { ...gameHeadline, band: ratingBand(gameHeadline.value) },
+        totals: game.totals,
+        titles: game.titles,
+        finals: game.finals,
+        tournaments: game.tournaments,
+      },
     };
   });
 
@@ -77,13 +102,20 @@ function roster() {
  * admin; `createdBy` is internal.
  */
 function publicPerson(p, { withNote, withTournaments }) {
-  const { ratingNote, createdBy, tournaments, ...rest } = p;
+  const { ratingNote, createdBy, tournaments, game, ...rest } = p;
+  const { ratingNote: gameNote, tournaments: gameTournaments, ...gameRest } = game;
   return {
     ...rest,
     ...(withNote ? { ratingNote } : {}),
     tournamentCount: tournaments.length,
     lastTournament: tournaments[0] ? { name: tournaments[0].name, season: tournaments[0].season, team: tournaments[0].team } : null,
     ...(withTournaments ? { tournaments } : {}),
+    game: {
+      ...gameRest,
+      ...(withNote ? { ratingNote: gameNote } : {}),
+      tournamentCount: gameTournaments.length,
+      ...(withTournaments ? { tournaments: gameTournaments } : {}),
+    },
   };
 }
 

@@ -37,11 +37,14 @@ Consequences worth understanding:
 | `constants.js` | Positions, event types, point weights, medals, defaults |
 | `helpers.js` | Accessors over the tournament document, player-kind predicates |
 | `clock.js` | Match clock arithmetic |
-| `standings.js` | Table, tiebreaks, final seeding, champion, round-robin generation |
+| `standings.js` | Table, tiebreaks, group tables, final seeding, champion, round-robin generation |
+| `knockout.js` | Stages, who went through, penalty shoot-outs, seeding a bracket |
 | `events.js` | Match log, discipline, sendings off, suspensions |
 | `stats.js` | The points engine and every statistics table |
 | `awards.js` | The five medals and the archive summary |
 | `auction.js` | Budgets, squad shape, and every validation guard |
+| `career.js` | Careers across tournaments — the pitch record and the FC 26 one |
+| `rating.js` | The "from stats" ratings, football and gaming |
 | `format.js` | Human-readable formatting |
 
 ### The tournament document
@@ -51,14 +54,32 @@ Everything above works on one nested object, which is also what the API returns:
 ```js
 {
   id, slug, name, season, format, status,
+  mode, game,                       // 'field' | 'esports', and what is played
   meta:     { venueName, kickoffISO, ... },
   settings: { budget, basePrice, points: {...}, ... },
-  teams:    { [teamId]:   { id, slot, name, jerseyColor, ... } },
-  players:  { [playerId]: { id, name, pos, teamId, price, kind } },
-  matches:  { [matchId]:  { id, no, homeId, awayId, homeScore, awayScore,
-                            status, isFinal, clock, events: { [id]: {...} } } }
+  teams:    { [teamId]:   { id, slot, name, group, jerseyColor, ... } },
+  players:  { [playerId]: { id, name, pos, teamId, price, kind, gamerTag } },
+  matches:  { [matchId]:  { id, no, stage, homeId, awayId, homeScore, awayScore,
+                            homePens, awayPens, status, isFinal, clock,
+                            events: { [id]: {...} } } }
 }
 ```
+
+### Gaming tournaments
+
+A tournament with `mode: 'esports'` is the same document, read differently. A
+team is a pair sharing one controller rather than a squad; `teams.group` puts it
+in Group A or B; `matches.stage` is `group`, `semi` or `final`; and a knockout
+that finishes level is settled by `home_pens` / `away_pens`.
+
+`matches.is_final` stays authoritative for *the* final, so `champion()` and the
+Hall of Fame did not have to learn anything new. Nothing per-player is logged —
+in FC 26 the goals are scored by players inside the game — so the auction, the
+positions and the match log are simply not shown.
+
+A person therefore has two independent records: the pitch career described
+below, and a gaming one built from their pair's results (`career.js`), each with
+its own rating. They are never added together.
 
 Keyed objects, not arrays. `server/db/repo/tournaments.js#loadTournament`
 assembles it from normalised tables in four queries. That translation is what
@@ -108,11 +129,28 @@ the finished matches the player's team played in.
 
 `shared/domain/rating.js` turns a career into the "from stats" rating: points
 per match, pulled towards 60 until there are enough matches to believe it.
+`gameStatsRating` does the same for FC 26, from league points per match, and
+the super admin's `game_rating` is its headline — the gaming profile (tag,
+platform, favourite club) sits on the same `people` row.
 
 Photos are files in `DATA_DIR/photos`, served from `/media/photos/` with a
 year-long cache; each upload gets a new random file name, so a changed photo is
 never served stale. The server checks the bytes are really a JPEG, PNG or WebP
 and never builds a path from anything the client sent (`server/photos.js`).
+
+## Backups
+
+`server/routes/site.js` is the super admin's: a `VACUUM INTO` snapshot of the
+database, a JSON dump of every table, and a ZIP of both plus every photo, all
+downloaded through the browser. `server/zip.js` writes that archive — stored
+entries, no compression, about a hundred lines, so the one-dependency rule
+survives the feature. The same screen reports the configuration, because the
+settings that break a site quietly (`PUBLIC_URL`, the data directory) are
+invisible everywhere else.
+
+A single tournament's export is `GET /api/tournaments/:tid/export`, on the
+tournament router, so its own admin can take it and `test/api/isolation.test.js`
+checks it against another tournament's staff like every other route there.
 
 ## Permissions
 

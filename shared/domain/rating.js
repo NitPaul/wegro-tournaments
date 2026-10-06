@@ -48,6 +48,31 @@ export function headlineRating(person, totals) {
   return fromStats === null ? { value: null, source: null } : { value: fromStats, source: "stats" };
 }
 
+/**
+ * The same arithmetic for a gaming record, which counts results rather than
+ * goals: points per match, where a win is 3. Three a match is perfect, so the
+ * scale runs from 45 (losing everything) through 60 (a draw a match) to 90.
+ * Pulled towards 60 until enough matches have been played to believe it.
+ */
+export function gameStatsRating(totals) {
+  const matches = Number(totals?.matches ?? 0);
+  if (matches < RATING_MIN_MATCHES) return null;
+
+  const perMatch = Number(totals.points ?? 0) / matches;
+  const raw = 45 + perMatch * 15;
+  const confidence = matches / (matches + PRIOR_MATCHES);
+  const shrunk = BASELINE + (raw - BASELINE) * confidence;
+
+  return Math.round(Math.min(CEILING, Math.max(FLOOR, shrunk)));
+}
+
+/** The number on a gaming card: the admin's rating if there is one, else the one from results. */
+export function gameHeadlineRating(person, totals) {
+  if (Number.isInteger(person?.gameRating)) return { value: person.gameRating, source: "admin" };
+  const fromStats = gameStatsRating(totals);
+  return fromStats === null ? { value: null, source: null } : { value: fromStats, source: "stats" };
+}
+
 /** A word for a rating, for the badge colour and for screen readers. */
 export function ratingBand(value) {
   if (value === null || value === undefined) return "none";

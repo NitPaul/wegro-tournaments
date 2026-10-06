@@ -2,11 +2,14 @@
 
 import { db, newId, transaction } from "../index.js";
 
-export function createMatch(tournamentId, { no, homeId = null, awayId = null, isFinal = false, kickoff = null }) {
+export function createMatch(
+  tournamentId,
+  { no, homeId = null, awayId = null, isFinal = false, kickoff = null, stage = null },
+) {
   const id = newId("mt");
   db.prepare(
-    `INSERT INTO matches (id, tournament_id, no, home_team_id, away_team_id, status, is_final, kickoff, clock_json)
-     VALUES (?, ?, ?, ?, ?, 'scheduled', ?, ?, ?)`,
+    `INSERT INTO matches (id, tournament_id, no, home_team_id, away_team_id, status, is_final, kickoff, clock_json, stage)
+     VALUES (?, ?, ?, ?, ?, 'scheduled', ?, ?, ?, ?)`,
   ).run(
     id,
     tournamentId,
@@ -16,6 +19,7 @@ export function createMatch(tournamentId, { no, homeId = null, awayId = null, is
     isFinal ? 1 : 0,
     kickoff,
     JSON.stringify({ period: "pre", running: false, startedAt: null, elapsed: 0, addedSeconds: 0 }),
+    stage,
   );
   return id;
 }
@@ -39,6 +43,10 @@ const MATCH_COLUMNS = {
   awayScore: "away_score",
   status: "status",
   kickoff: "kickoff",
+  stage: "stage",
+  // The shoot-out, read only when a knockout match is level.
+  homePens: "home_pens",
+  awayPens: "away_pens",
 };
 
 export function updateMatch(matchId, patch) {

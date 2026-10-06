@@ -13,6 +13,9 @@ import path from "node:path";
 export async function startTestServer() {
   const dataDir = fs.mkdtempSync(path.join(os.tmpdir(), "wgt-api-"));
   process.env.DATA_DIR = dataDir;
+  // Anything a test writes as a backup goes in the throwaway directory too,
+  // never into the repository's own backups/.
+  process.env.BACKUP_DIR = path.join(dataDir, "backups");
   process.env.SESSION_SECRET = "test-secret-".repeat(4);
   process.env.NODE_ENV = "test";
   process.env.PUBLIC_URL = "http://127.0.0.1";
@@ -69,7 +72,14 @@ export async function startTestServer() {
       }
       return { status: res.status, body: json };
     };
+    /** The untouched Response — for downloads, where bytes and headers matter. */
+    const raw = async (method, url) => {
+      const res = await fetch(base + url, { method, headers: cookie ? { cookie } : {}, redirect: "manual" });
+      return res;
+    };
+
     return {
+      raw,
       get: (url) => call("GET", url),
       post: (url, body = {}) => call("POST", url, body),
       patch: (url, body = {}) => call("PATCH", url, body),

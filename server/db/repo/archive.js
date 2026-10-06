@@ -101,7 +101,7 @@ export function removeArchive(tournamentId) {
 export function listArchive() {
   return db
     .prepare(
-      `SELECT a.*, t.name, t.slug, t.season, t.format, t.starts_on, t.completed_at
+      `SELECT a.*, t.name, t.slug, t.season, t.format, t.mode, t.game, t.starts_on, t.completed_at
          FROM archive a
          JOIN tournaments t ON t.id = a.tournament_id
         WHERE t.status = 'completed'
@@ -118,6 +118,8 @@ function shape(r) {
     slug: r.slug,
     season: r.season,
     format: r.format,
+    mode: r.mode ?? "field",
+    game: r.game ?? null,
     startsOn: r.starts_on,
     completedAt: r.completed_at,
     championTeamId: r.champion_team_id,

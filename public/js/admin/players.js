@@ -142,6 +142,7 @@ function paintRoster() {
               <span class="faint">${p.tournamentCount ? D.plural(p.tournamentCount, "tournament") : "New"}</span>
             </span>
           </span>
+          ${p.game?.totals?.matches || p.game?.rating !== null ? `<span class="pcard__game" title="Plays FC 26">🎮</span>` : ""}
           <span class="pcard__rating rating--${e(p.headline.band)}" title="${p.rating !== null ? "Admin rating" : p.statsRating !== null ? "From stats" : "Not rated"}">
             ${p.rating ?? "—"}
             <small>${p.statsRating !== null ? `stats ${p.statsRating}` : "no stats"}</small>
@@ -276,6 +277,32 @@ function openEditor(person) {
           : `<p class="faint">${creating ? "The super admin sets ratings." : "Only the super admin can rename or rate players. You can change the photo of players in your own tournament."}</p>`
       }
 
+      <fieldset class="gaming-edit">
+        <legend>🎮 Gaming</legend>
+        <p class="faint">Their FC 26 half: who they are in the game, and how they do there. Separate from the football rating above.</p>
+        <div class="form-grid">
+          <label class="field"><span>Gamer tag</span>
+            <input class="input" id="pTag" maxlength="40" value="${e(person?.game?.gamerTag ?? "")}" placeholder="e.g. munna_fc" /></label>
+          <label class="field"><span>Platform</span>
+            <select class="input" id="pPlatform">
+              <option value="">Not set</option>
+              ${D.PLATFORMS.map((x) => `<option value="${e(x)}"${person?.game?.platform === x ? " selected" : ""}>${e(x)}</option>`).join("")}
+            </select></label>
+          <label class="field"><span>Favourite club</span>
+            <input class="input" id="pClub" maxlength="40" value="${e(person?.game?.favClub ?? "")}" placeholder="e.g. Real Madrid" /></label>
+        </div>
+        ${
+          isSuper
+            ? `<div class="rating-edit__row">
+                 <input type="range" min="1" max="99" id="pGameRange" value="${person?.game?.rating ?? 60}" ${person?.game?.rating == null || creating ? "disabled" : ""} />
+                 <output class="rating-edit__value" id="pGameOut">${person?.game?.rating ?? "—"}</output>
+               </div>
+               <label class="check"><input type="checkbox" id="pGameUnrated" ${person?.game?.rating == null || creating ? "checked" : ""} /> Not rated as a gamer yet</label>
+               <p class="faint">${person?.game?.statsRating != null ? `From results: <b>${person.game.statsRating}</b> over ${D.plural(person.game.totals.matches, "match", "matches")}.` : "No FC 26 results yet."}</p>`
+            : ""
+        }
+      </fieldset>
+
       ${
         !creating && person.tournamentCount
           ? `<p class="faint person-editor__record">${D.plural(person.totals.matches, "match", "matches")} · ${D.plural(person.totals.goals, "goal")} · ${D.plural(person.totals.saves, "save")}${person.titles ? ` · ${D.plural(person.titles, "title")}` : ""}${person.medals.length ? ` · ${person.medals.map((m) => `${m.icon} ${e(m.label)} ${e(m.season)}`).join(", ")}` : ""}</p>`
@@ -312,6 +339,15 @@ function openEditor(person) {
   };
 
   if (isSuper) {
+    const gameRange = $("#pGameRange", dialog);
+    const gameOut = $("#pGameOut", dialog);
+    const gameUnrated = $("#pGameUnrated", dialog);
+    gameRange.addEventListener("input", () => (gameOut.textContent = gameRange.value));
+    gameUnrated.addEventListener("change", () => {
+      gameRange.disabled = gameUnrated.checked;
+      gameOut.textContent = gameUnrated.checked ? "—" : gameRange.value;
+    });
+
     const range = $("#pRatingRange", dialog);
     const out = $("#pRatingOut", dialog);
     const unrated = $("#pUnrated", dialog);
@@ -368,12 +404,22 @@ function openEditor(person) {
       const pos = $("#pPos", dialog).value || null;
       const rating = isSuper && !$("#pUnrated", dialog).checked ? Number($("#pRatingRange", dialog).value) : null;
       const ratingNote = isSuper ? $("#pNote", dialog).value : undefined;
+      const gaming = {
+        gamerTag: $("#pTag", dialog).value.trim(),
+        platform: $("#pPlatform", dialog).value,
+        favClub: $("#pClub", dialog).value.trim(),
+      };
+      const gameRating = isSuper && !$("#pGameUnrated", dialog).checked ? Number($("#pGameRange", dialog).value) : null;
 
       if (creating) {
         if (!name) throw new Error("Enter the player's name.");
-        ({ person: target } = await people.create({ name, pos, rating, ratingNote }));
+        ({ person: target } = await people.create({ name, pos, rating, ratingNote, ...gaming }));
+        if (isSuper && gameRating !== null) await people.update(target.id, { gameRating });
       } else if (isSuper) {
-        await people.update(person.id, { name, pos, rating, ratingNote });
+        await people.update(person.id, { name, pos, rating, ratingNote, gameRating, ...gaming });
+      } else {
+        // A tournament admin may fill in the gaming details of their own players.
+        await people.update(person.id, gaming);
       }
 
       if (editor && bitmap) {

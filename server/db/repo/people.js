@@ -15,6 +15,12 @@ const personOut = (r) => ({
   photo: r.photo ?? null,
   rating: Number.isInteger(r.rating) ? r.rating : null,
   ratingNote: r.rating_note ?? "",
+  // Their half of the console: who they are in the game, and how good at it.
+  gamerTag: r.gamer_tag ?? null,
+  platform: r.platform ?? null,
+  favClub: r.fav_club ?? null,
+  gameRating: Number.isInteger(r.game_rating) ? r.game_rating : null,
+  gameRatingNote: r.game_rating_note ?? "",
   active: r.active === 1,
   createdBy: r.created_by ?? null,
   createdAt: r.created_at,
@@ -43,7 +49,19 @@ export function createPerson({ name, pos = null, rating = null, ratingNote = "",
   return getPerson(id);
 }
 
-const COLUMNS = { name: "name", pos: "pos", rating: "rating", ratingNote: "rating_note", active: "active", photo: "photo" };
+const COLUMNS = {
+  name: "name",
+  pos: "pos",
+  rating: "rating",
+  ratingNote: "rating_note",
+  active: "active",
+  photo: "photo",
+  gamerTag: "gamer_tag",
+  platform: "platform",
+  favClub: "fav_club",
+  gameRating: "game_rating",
+  gameRatingNote: "game_rating_note",
+};
 
 export function updatePerson(id, patch) {
   const sets = [];

@@ -74,6 +74,12 @@ export function wireOverview({ open, refresh }) {
 
   $("#overviewSearch").addEventListener("input", paint);
 
+  // The game's name only means anything for a gaming tournament.
+  const mode = $("#newTournamentMode");
+  const syncMode = () => ($("#newTournamentGameField").hidden = mode.value !== "esports");
+  mode.addEventListener("change", syncMode);
+  syncMode();
+
   panel.addEventListener("click", async (ev) => {
     const btn = ev.target.closest("button");
     if (!btn) return;
@@ -87,10 +93,13 @@ export function wireOverview({ open, refresh }) {
         if (month && !/^\d{4}$/.test(year)) {
           return toast("Add the year for the month — for example September 2026.", "err");
         }
+        const mode = $("#newTournamentMode").value;
         const { tournament } = await tournaments.create({
           name,
           season: D.seasonLabel(month, year),
           format: $("#newTournamentFormat").value,
+          mode,
+          game: mode === "esports" ? $("#newTournamentGame").value.trim() : undefined,
           startsOn: $("#newTournamentDate").value || null,
         });
         $("#newTournamentName").value = "";
@@ -175,7 +184,7 @@ function paint() {
           </div>
           <h3 class="ov__name">${e(t.name)}${t.season ? ` <span class="faint">${e(t.season)}</span>` : ""}</h3>
           ${t.previousNames.length ? `<p class="faint ov__was">Previously ${t.previousNames.map((n) => `“${e(n)}”`).join(", ")}</p>` : ""}
-          <p class="faint">${e(t.format === "friendly" ? "Friendly" : "League")} · ${t.teamCount} teams · ${t.playerCount} players · ${t.matchCount} matches${t.startsOn ? ` · starts ${e(D.formatDay(t.startsOn))}` : " · date will be announced soon"}</p>
+          <p class="faint">${t.mode === "esports" ? `🎮 ${e(t.game || "Gaming")} · ` : ""}${e(t.format === "friendly" ? "Friendly" : "League")} · ${t.teamCount} teams · ${t.playerCount} players · ${t.matchCount} matches${t.startsOn ? ` · starts ${e(D.formatDay(t.startsOn))}` : " · date will be announced soon"}</p>
           <div class="ov__staff">${staff}</div>
           <div class="card-buttons">
             <button class="btn btn--sm btn--primary" data-open="${e(t.id)}" type="button">Open</button>

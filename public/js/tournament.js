@@ -71,12 +71,24 @@ function fail(message, err) {
   show($("#offline"), true);
 }
 
+/** Which tab is open, by name. */
+const currentTab = () =>
+  document.querySelector('[role="tab"][aria-selected="true"]')?.id.replace(/^tab-/, "") ?? "";
+
 /* ---------------------------------------------------------------- render */
 
 function render() {
   show($("#loading"), false);
   show($("#offline"), false);
   show($("#content"), true);
+
+  // A gaming tournament has no auction and no per-player match log, so the
+  // tabs that live on those have nothing to show.
+  const esports = D.isEsports(data);
+  $("#tab-squads").textContent = esports ? "Teams" : "Squads";
+  show($("#tab-stats"), !esports);
+  show($("#tab-discipline"), !esports);
+  if (esports && ["stats", "discipline"].includes(currentTab())) $("#tab-overview").click();
 
   document.title = `${data.name}${data.season ? ` ${data.season}` : ""} — WeGro`;
   $("#brandTitle").textContent = data.name;
@@ -85,10 +97,11 @@ function render() {
   paintBanners();
   paintCaptains();
   paintNextUp();
-  paintTable($("#miniTable"), true);
+  paintMini();
+  paintTables();
+  paintKnockout();
   paintVenue();
   paintFixtures();
-  paintTable($("#table"), false);
   paintSquads();
   paintStats();
   paintDiscipline();
@@ -97,6 +110,15 @@ function render() {
 
 function paintHero() {
   const meta = D.getMeta(data);
+
+  // The football crest on a gaming tournament would be telling people the wrong
+  // thing before they have read a word, so that one gets an emblem of its own.
+  setHTML(
+    $("#heroCrest"),
+    D.isEsports(data)
+      ? `<span class="hero__crest hero__crest--game" aria-hidden="true">\u{1F3AE}</span>`
+      : `<img class="hero__crest" src="/assets/crest.png" alt="" width="639" height="639" />`,
+  );
 
   $("#heroEyebrow").textContent = D.seasonHeading(data.season);
 
@@ -122,6 +144,7 @@ function paintHero() {
   setHTML(
     $("#heroPills"),
     [
+      D.isEsports(data) ? `<span class="pill pill--flame">🎮 ${e(D.gameName(data))}</span>` : "",
       data.format === "friendly"
         ? `<span class="pill">Friendly</span>`
         : `<span class="pill pill--mint">League</span>`,
@@ -157,7 +180,22 @@ function paintBanners() {
 }
 
 function paintCaptains() {
+  const esports = D.isEsports(data);
+  $("#captainsTitle").textContent = esports ? "Teams" : "Captains";
+
   const rows = D.teamsList(data).map((t) => {
+    if (esports) {
+      const members = D.teamMembers(data, t.id);
+      return `<div class="captain-row">
+        ${face(members[0], "face")}
+        <span class="captain-row__text">
+          <b>${e(t.name)}</b>
+          <span class="muted">${members.map((m) => personLink(m)).join(" &amp; ") || "Nobody yet"}</span>
+        </span>
+        ${t.group ? `<span class="pill pill--mint">Group ${e(t.group)}</span>` : ""}
+      </div>`;
+    }
+
     const captain = D.teamCaptain(data, t.id);
     return `<div class="captain-row">
       ${face(captain, "face")}
@@ -213,19 +251,25 @@ function paintVenue() {
 function matchRow(m, { plain = false } = {}) {
   const { homeLabel, awayLabel } = D.matchSides(data, m);
   const played = D.isPlayed(m);
-  const score = played || m.status === "live" ? `${m.homeScore ?? 0} – ${m.awayScore ?? 0}` : "v";
+  const score = played ? `${m.homeScore}–${m.awayScore}` : m.status === "live" ? `${m.homeScore ?? 0} – ${m.awayScore ?? 0}` : "v";
+  // The shoot-out goes under the score rather than inside it: on a phone a
+  // one-line "2–2 (5–4 on pens)" pushes both team names onto two lines each.
+  const pens = played && m.homePens != null && m.awayPens != null && m.homeScore === m.awayScore
+    ? `<span class="fx__pens">${m.homePens}–${m.awayPens} on pens</span>`
+    : "";
+  const stage = D.stageOf(m);
   const pill =
     m.status === "live"
       ? `<span class="pill pill--live">Live</span>`
-      : m.isFinal
-        ? `<span class="pill pill--gold">Final</span>`
+      : stage !== "group"
+        ? `<span class="pill pill--gold">${e(D.STAGE_LABEL[stage])}</span>`
         : `<span class="pill">${e(D.STATUS_LABEL[m.status] ?? m.status)}</span>`;
 
   const log = played ? matchLog(m) : "";
   return `<div class="fx${plain ? " fx--plain" : ""}">
     <div class="row spread">
       <span class="fx__team">${e(homeLabel)}</span>
-      <b class="fx__score">${e(score)}</b>
+      <span class="fx__scorebox"><b class="fx__score">${e(score)}</b>${pens}</span>
       <span class="fx__team">${e(awayLabel)}</span>
     </div>
     <div class="row spread"><span class="faint">Match ${m.no}${m.time ? ` · ${e(m.time)}` : ""}</span>${pill}</div>
@@ -253,8 +297,8 @@ function paintFixtures() {
   );
 }
 
-function paintTable(target, mini) {
-  const table = D.standings(data);
+function paintTable(target, mini, group = null) {
+  const table = D.standings(data, { group });
   if (!table.length) return setHTML(target, `<p class="faint">No teams yet.</p>`);
 
   const qualify = D.groupStageComplete(data) && data.format === "league";
@@ -277,7 +321,80 @@ function paintTable(target, mini) {
   setHTML(target, `<table class="tbl"><thead>${head}</thead><tbody>${rows.join("")}</tbody></table>`);
 }
 
+/**
+ * The leaderboard beside Next up. With groups there is no single ladder to
+ * show, so each group gets its own short table rather than one table that
+ * silently mixes teams who never played each other.
+ */
+function paintMini() {
+  const tables = D.groupTables(data);
+  setHTML(
+    $("#miniTables"),
+    tables
+      .map(({ group }, i) => `${group ? `<p class="mini-group">Group ${e(group)}</p>` : ""}<div id="mini-${i}"></div>`)
+      .join(""),
+  );
+  tables.forEach((t, i) => paintTable($(`#mini-${i}`), true, t.group));
+}
+
+/** One table per group, or the single table every football tournament has had. */
+function paintTables() {
+  const tables = D.groupTables(data);
+  setHTML(
+    $("#tables"),
+    tables
+      .map(
+        ({ group }, i) => `<div class="card">
+          <h2 class="card__title">${group ? `Group ${e(group)}` : "Standings"}</h2>
+          <div class="table-scroll" id="table-${i}"></div>
+        </div>`,
+      )
+      .join(""),
+  );
+  tables.forEach((_, i) => paintTable($(`#table-${i}`), false, tables[i].group));
+}
+
+/**
+ * The semi-finals and the final, as cards rather than a table: two names, a
+ * score, and who went through.
+ */
+function paintKnockout() {
+  const matches = D.knockoutMatches(data);
+  // A football league's one final already has the hero, the fixture list and the
+  // champion; a block of its own would only repeat them. This is for a bracket:
+  // a gaming tournament, or any tournament with rounds before the final.
+  const worth = matches.length > 0 && (D.isEsports(data) || matches.some((m) => D.stageOf(m) !== "final"));
+  show($("#knockoutCard"), worth);
+  if (!worth) return;
+
+  setHTML(
+    $("#knockout"),
+    matches
+      .map((m) => {
+        const { home, away, homeLabel, awayLabel } = D.matchSides(data, m);
+        const result = D.matchWinner(data, m);
+        const side = (team, label, id) =>
+          `<span class="ko__team${result.winnerId && result.winnerId === id ? " is-through" : ""}">
+             ${team ? e(team.name) : `<i>${e(label)}</i>`}
+           </span>`;
+        return `<div class="ko">
+          <span class="pill pill--gold">${e(D.STAGE_LABEL[D.stageOf(m)])}</span>
+          <div class="ko__line">
+            ${side(home, homeLabel, m.homeId)}
+            <b class="ko__score">${D.isPlayed(m) ? e(D.scoreLine(m)) : "v"}</b>
+            ${side(away, awayLabel, m.awayId)}
+          </div>
+          ${D.needsPenalties(m) ? `<p class="faint">Level — waiting on the shoot-out.</p>` : ""}
+        </div>`;
+      })
+      .join(""),
+  );
+}
+
 function paintSquads() {
+  if (D.isEsports(data)) return paintTeams();
+
+  show($("#auctionCard"), true);
   const progress = D.auctionProgress(data);
   const state = D.auctionState(data);
 
@@ -320,6 +437,32 @@ function paintSquads() {
     $("#pool"),
     `<div class="pool">${unsold.map((p) => `<span class="pill">${e(p.pos)} ${e(p.name)}</span>`).join("")}</div>`,
   );
+}
+
+/** Gaming teams: the pair who share the controller, with their gamer tags. */
+function paintTeams() {
+  // Nothing was bought and nothing is unsold: a gaming team is picked, not won.
+  show($("#auctionCard"), false);
+  show($("#poolCard"), false);
+
+  const cards = D.teamsList(data).map((t) => {
+    const members = D.teamMembers(data, t.id);
+    return `<div class="card squad">
+      <h3 class="card__title">
+        ${e(t.name)}${t.group ? ` <span class="pill pill--mint">Group ${e(t.group)}</span>` : ""}
+      </h3>
+      <ul class="squad__list">
+        ${members
+          .map(
+            (p) => `<li>${face(p, "face face--sm")}<span class="grow">${personLink(p)}</span>
+              ${p.gamerTag ? `<span class="faint">${e(p.gamerTag)}</span>` : ""}</li>`,
+          )
+          .join("") || `<li class="faint">Nobody yet</li>`}
+      </ul>
+    </div>`;
+  });
+
+  setHTML($("#squads"), `<div class="cols-2">${cards.join("")}</div>`);
 }
 
 function paintStats() {

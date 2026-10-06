@@ -11,6 +11,31 @@
 
 export const POSITIONS = ["GK", "DEF", "MID", "FWD"];
 
+/**
+ * What is being played. A gaming tournament is an ordinary tournament with
+ * `mode: "esports"` — same teams, fixtures, table and champion. What it does
+ * not have is an auction, positions or a per-player match log, because the
+ * players scoring the goals are not the people in the room.
+ */
+export const MODES = ["field", "esports"];
+
+export const MODE_LABEL = {
+  field: "Football",
+  esports: "Gaming",
+};
+
+/** Where people play the game. Free text is still accepted; these are the suggestions. */
+export const PLATFORMS = ["PlayStation", "Xbox", "PC"];
+
+/** Knockout rounds, in the order they are played. The group stage is everything else. */
+export const STAGES = ["group", "semi", "final"];
+
+export const STAGE_LABEL = {
+  group: "Group stage",
+  semi: "Semi-final",
+  final: "Final",
+};
+
 export const POSITION_LABEL = {
   GK: "Goalkeeper",
   DEF: "Defence",
@@ -234,6 +259,10 @@ export const DEFAULT_SETTINGS = {
   maxPerCategory: 2,
   maxGK: 1,
   auctionOpen: true,
+  /** How many groups the teams are split into. 1 means a single table. */
+  groups: 1,
+  /** How the tournament is decided: straight off the table, a final, or semis then a final. */
+  knockout: "final",
   // The player being bid for right now, shown on the projector screen.
   auctionOnBlock: null,
   auctionOnBlockAt: null,
