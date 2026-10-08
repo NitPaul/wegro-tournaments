@@ -44,7 +44,10 @@ const emptyTotals = () => Object.fromEntries([["matches", 0], ...CAREER_FIELDS.m
  * scored by Mbappé, not by the person holding the controller, so a pair's
  * record is their results — played, won, drawn, lost, goals, points.
  */
-export const GAME_FIELDS = ["matches", "won", "drawn", "lost", "goalsFor", "goalsAgainst", "goalDiff", "points"];
+export const GAME_FIELDS = [
+  "matches", "won", "drawn", "lost", "goalsFor", "goalsAgainst", "goalDiff", "points",
+  "goals", "assists", "saves", "shots", "chances"
+];
 
 const emptyGameTotals = () => Object.fromEntries(GAME_FIELDS.map((f) => [f, 0]));
 
@@ -171,6 +174,7 @@ export function buildCareers(tournaments, archives = []) {
 function addGameTournament(careerOf, data, archive) {
   const table = standings(data);
   const posFor = new Map(table.map((r) => [r.teamId, r.pos]));
+  const pStats = playerStats(data);
 
   for (const team of table.map((r) => r.team)) {
     // Everything they played, not only the group stage: a semi-final and a
@@ -184,6 +188,14 @@ function addGameTournament(careerOf, data, archive) {
     for (const member of members) {
       const career = careerOf(member.personId);
       const g = career.game;
+      const ind = pStats.find((r) => r.playerId === member.id) || {};
+      const gStats = {
+        goals: ind.goals || 0,
+        assists: ind.assists || 0,
+        saves: ind.saves || 0,
+        shots: ind.shots || 0,
+        chances: ind.chances || 0,
+      };
 
       g.totals.matches += row.played;
       g.totals.won += row.won;
@@ -193,6 +205,12 @@ function addGameTournament(careerOf, data, archive) {
       g.totals.goalsAgainst += row.goalsAgainst;
       g.totals.goalDiff = g.totals.goalsFor - g.totals.goalsAgainst;
       g.totals.points += row.points;
+      g.totals.goals += gStats.goals;
+      g.totals.assists += gStats.assists;
+      g.totals.saves += gStats.saves;
+      g.totals.shots += gStats.shots;
+      g.totals.chances += gStats.chances;
+      
       if (champion) g.titles++;
       if (champion || runnerUp) g.finals++;
 
@@ -219,6 +237,7 @@ function addGameTournament(careerOf, data, archive) {
           goalsAgainst: row.goalsAgainst,
           goalDiff: row.goalDiff,
           points: row.points,
+          ...gStats,
         },
       });
     }

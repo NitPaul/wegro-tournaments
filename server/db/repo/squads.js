@@ -41,16 +41,39 @@ export function updateTeam(teamId, patch) {
   return db.prepare(`UPDATE teams SET ${sets.join(", ")} WHERE id = ?`).run(...args).changes > 0;
 }
 
-export function deleteTeam(teamId) {
+/**
+ * `releaseToPool` is what a bought player is owed and what a pair member is
+ * not. In a football tournament a player belongs to the auction pool, not to
+ * the team that happened to buy them, so removing the team puts them back up
+ * for sale. A gaming tournament has no pool: the team *is* the pair, and a
+ * member left behind would be a player on no team, invisible in a console that
+ * only lists teams — and still counted as taken, so their name never came back
+ * to the picker.
+ */
+export function deleteTeam(teamId, { releaseToPool = true } = {}) {
   return transaction(() => {
-    // Players are released rather than deleted: a bought player belongs to the
-    // pool, not to the team that happened to buy them, and deleting them would
-    // take their match history with them.
-    db.prepare("UPDATE players SET team_id = NULL, price = NULL WHERE team_id = ? AND kind = 'auction'").run(teamId);
+    if (releaseToPool) {
+      db.prepare("UPDATE players SET team_id = NULL, price = NULL WHERE team_id = ? AND kind = 'auction'").run(teamId);
+    } else {
+      db.prepare("DELETE FROM players WHERE team_id = ? AND kind = 'auction'").run(teamId);
+    }
     // A captain or guest exists only in relation to their team, so they go.
     db.prepare("DELETE FROM players WHERE team_id = ? AND kind IN ('captain', 'guest')").run(teamId);
     return db.prepare("DELETE FROM teams WHERE id = ?").run(teamId).changes > 0;
   });
+}
+
+/**
+ * A row for this person with no team. One person is one player in a
+ * tournament, so putting them in a team moves this row rather than adding a
+ * second one — which is also how someone stranded by an earlier removal finds
+ * their way back into a team.
+ */
+export function teamlessPlayerForPerson(tournamentId, personId) {
+  const row = db
+    .prepare("SELECT id FROM players WHERE tournament_id = ? AND person_id = ? AND team_id IS NULL ORDER BY sort_order LIMIT 1")
+    .get(tournamentId, personId);
+  return row?.id ?? null;
 }
 
 /* ---------------------------------------------------------------- players */

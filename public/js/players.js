@@ -170,6 +170,11 @@ function gameCard(person) {
          ${tile("Lost", t.lost)}
          ${tile("Goals for", t.goalsFor)}
          ${tile("Goals against", t.goalsAgainst)}
+         ${t.goals ? tile("Per. Goals", t.goals) : ""}
+         ${t.assists ? tile("Per. Assists", t.assists) : ""}
+         ${t.saves ? tile("Per. Saves", t.saves) : ""}
+         ${t.shots ? tile("Per. Shots", t.shots) : ""}
+         ${t.chances ? tile("Per. Chances", t.chances) : ""}
          ${tile("Points", t.points)}
          ${g.titles ? tile("Titles", `\u{1F3C6} ${g.titles}`) : ""}
        </dl>`

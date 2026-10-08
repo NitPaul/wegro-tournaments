@@ -198,8 +198,7 @@ function applyRole() {
 
   if (loaded) {
     const current = myTournaments.find((t) => t.id === data.id);
-    // A gaming tournament has no auction, no positions and no per-player match
-    // log: in FC 26 the goals are scored by the players in the game.
+    // A gaming tournament has no auction and no positions.
     show($("#pairsCard"), esports);
     show($("#teamsCard"), !esports);
     show($("#squadCard"), !esports);
@@ -360,12 +359,22 @@ function renderPairs() {
       .join("") || `<p class="faint">No teams yet. Add the first pair below.</p>`,
   );
 
-  const taken = new Set(D.playersList(data).map((p) => p.personId).filter(Boolean));
+  // Taken means "in a team", not "has ever been in one". Someone whose team was
+  // removed is free again, and the server moves their existing row into the new
+  // team rather than adding a second one.
+  const taken = new Set(
+    D.playersList(data)
+      .filter((p) => p.teamId)
+      .map((p) => p.personId)
+      .filter(Boolean),
+  );
   const options = (roster) => {
     const free = roster.filter((p) => !taken.has(p.id));
     // Say why the list is empty, rather than offering an empty dropdown.
     return (
-      `<option value="">${free.length ? "— nobody —" : "— everybody is already in a team —"}</option>` +
+      `<option value="">${
+        free.length ? "— nobody —" : roster.length ? "— everybody is already in a team —" : "— nobody on the roster yet —"
+      }</option>` +
       free
         .map((p) => `<option value="${e(p.id)}">${e(p.name)}${p.game?.gamerTag ? ` (${e(p.game.gamerTag)})` : ""}</option>`)
         .join("")
@@ -495,13 +504,16 @@ function renderLive() {
   const knockout = D.isKnockout(match);
   const level = match.homeScore != null && match.homeScore === match.awayScore;
 
+  const actionTypes = esports
+    ? D.GAMING_ACTION_TYPES
+    : ["goal", "save", "clearance", "shot", "chance", "foul", "yellow", "red"];
   const actionsFor = (team, label) => {
     if (!team) return `<p class="faint">${e(label)} is not decided yet.</p>`;
     const tally = D.disciplineTally(data, match, team.id);
     return `<div class="card">
       <h3 class="card__title">${e(team.name)}</h3>
       <div class="card-buttons">
-        ${["goal", "save", "clearance", "shot", "chance", "foul", "yellow", "red"]
+        ${actionTypes
           .map(
             (type) =>
               `<button class="btn ${type === "goal" ? "btn--primary" : "btn--ghost"} btn--sm"
@@ -510,7 +522,7 @@ function renderLive() {
           )
           .join("")}
       </div>
-      <p class="faint">Fouls ${tally.foul} · 🟨 ${tally.yellow} · 🟥 ${tally.red}</p>
+      ${esports ? "" : `<p class="faint">Fouls ${tally.foul} · 🟨 ${tally.yellow} · 🟥 ${tally.red}</p>`}
     </div>`;
   };
 
@@ -561,12 +573,9 @@ function renderLive() {
            : ""
        }
      </div>
-     ${esports ? "" : `<div class="cols-2">${actionsFor(home, homeLabel)}${actionsFor(away, awayLabel)}</div>`}`,
+     <div class="cols-2">${actionsFor(home, homeLabel)}${actionsFor(away, awayLabel)}</div>`,
   );
 
-  // The match log belongs to football; FC 26 records results, not goalscorers.
-  show($("#liveEvents").closest(".card"), !esports);
-  if (esports) return setHTML($("#liveEvents"), "");
 
   setHTML(
     $("#liveEvents"),

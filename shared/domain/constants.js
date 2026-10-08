@@ -124,6 +124,14 @@ export const ACTION_ICON = {
 
 export const EVENT_TYPES = Object.keys(ACTION_LABEL);
 
+/**
+ * Event types available during a gaming match.
+ *
+ * No discipline (you cannot foul in FC 26) and no clearances — just the things
+ * that tell each player's individual gaming record apart.
+ */
+export const GAMING_ACTION_TYPES = ["goal", "save", "shot", "chance"];
+
 /** The disciplinary events, in ascending severity. */
 export const DISCIPLINE_TYPES = ["foul", "yellow", "red"];
 
