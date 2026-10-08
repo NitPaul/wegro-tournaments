@@ -81,8 +81,9 @@ jobs:
               exit 1
             fi
 
-            echo "📦 Pulling latest code..."
-            git pull origin main
+            echo "📦 Resetting local changes and pulling latest code..."
+            git fetch origin main
+            git reset --hard origin/main
 
             # docker compose, not \`docker build\` + \`docker run\`: the database
             # lives in the wegro-data named volume declared in
