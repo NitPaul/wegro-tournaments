@@ -82,13 +82,12 @@ function render() {
   show($("#offline"), false);
   show($("#content"), true);
 
-  // A gaming tournament has no auction and no per-player match log, so the
-  // tabs that live on those have nothing to show.
+  // A gaming tournament has no auction. It has stats, but no discipline.
   const esports = D.isEsports(data);
   $("#tab-squads").textContent = esports ? "Teams" : "Squads";
-  show($("#tab-stats"), !esports);
+  show($("#tab-stats"), true);
   show($("#tab-discipline"), !esports);
-  if (esports && ["stats", "discipline"].includes(currentTab())) $("#tab-overview").click();
+  if (esports && currentTab() === "discipline") $("#tab-overview").click();
 
   document.title = `${data.name}${data.season ? ` ${data.season}` : ""} — WeGro`;
   $("#brandTitle").textContent = data.name;

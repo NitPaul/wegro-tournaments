@@ -198,8 +198,7 @@ function applyRole() {
 
   if (loaded) {
     const current = myTournaments.find((t) => t.id === data.id);
-    // A gaming tournament has no auction, no positions and no per-player match
-    // log: in FC 26 the goals are scored by the players in the game.
+    // A gaming tournament has no auction and no positions.
     show($("#pairsCard"), esports);
     show($("#teamsCard"), !esports);
     show($("#squadCard"), !esports);
@@ -505,13 +504,16 @@ function renderLive() {
   const knockout = D.isKnockout(match);
   const level = match.homeScore != null && match.homeScore === match.awayScore;
 
+  const actionTypes = esports
+    ? D.GAMING_ACTION_TYPES
+    : ["goal", "save", "clearance", "shot", "chance", "foul", "yellow", "red"];
   const actionsFor = (team, label) => {
     if (!team) return `<p class="faint">${e(label)} is not decided yet.</p>`;
     const tally = D.disciplineTally(data, match, team.id);
     return `<div class="card">
       <h3 class="card__title">${e(team.name)}</h3>
       <div class="card-buttons">
-        ${["goal", "save", "clearance", "shot", "chance", "foul", "yellow", "red"]
+        ${actionTypes
           .map(
             (type) =>
               `<button class="btn ${type === "goal" ? "btn--primary" : "btn--ghost"} btn--sm"
@@ -520,7 +522,7 @@ function renderLive() {
           )
           .join("")}
       </div>
-      <p class="faint">Fouls ${tally.foul} · 🟨 ${tally.yellow} · 🟥 ${tally.red}</p>
+      ${esports ? "" : `<p class="faint">Fouls ${tally.foul} · 🟨 ${tally.yellow} · 🟥 ${tally.red}</p>`}
     </div>`;
   };
 
@@ -571,12 +573,9 @@ function renderLive() {
            : ""
        }
      </div>
-     ${esports ? "" : `<div class="cols-2">${actionsFor(home, homeLabel)}${actionsFor(away, awayLabel)}</div>`}`,
+     <div class="cols-2">${actionsFor(home, homeLabel)}${actionsFor(away, awayLabel)}</div>`,
   );
 
-  // The match log belongs to football; FC 26 records results, not goalscorers.
-  show($("#liveEvents").closest(".card"), !esports);
-  if (esports) return setHTML($("#liveEvents"), "");
 
   setHTML(
     $("#liveEvents"),
