@@ -323,9 +323,7 @@
 
 /* Plays FC 26 as well — the companion marker to the titles badge. */
 .pc__game {
-  padding: 3px 7px;
-  border-radius: var(--radius-pill);
-  background: rgba(2, 20, 17, 0.78);
+  padding: 3px 2px;
   font-size: 13px;
   line-height: 1;
 }
