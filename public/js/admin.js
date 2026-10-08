@@ -445,13 +445,20 @@ function renderMatches() {
                  <select class="input input--sm" data-match-side="away" data-match="${e(m.id)}">${teamOptions(m.awayId)}</select>
                </span>`;
 
+        // Clearing wipes a result, so it has nothing to do on a fixture nobody
+        // has played yet — and a button that reports success while changing
+        // nothing reads as a bug. Removing the fixture is the other thing an
+        // admin wants in that spot, so it is always there.
+        const hasResult = m.status !== "scheduled" || m.homeScore != null || m.awayScore != null;
+
         return `<div class="staff-row">
           <span class="faint" style="min-width:28px">${m.no}</span>
           ${stage === "group" ? "" : `<span class="pill pill--gold">${e(D.STAGE_LABEL[stage])}</span>`}
           ${sides}
           <span class="pill">${e(D.STATUS_LABEL[m.status] ?? m.status)}</span>
           <span class="faint">${D.scoreLine(m) || "– : –"}</span>
-          <button class="btn btn--sm btn--ghost" data-match-clear="${e(m.id)}" type="button">Clear</button>
+          ${hasResult ? `<button class="btn btn--sm btn--ghost" data-match-clear="${e(m.id)}" type="button">Clear</button>` : ""}
+          <button class="btn btn--sm btn--danger" data-match-del="${e(m.id)}" type="button">Remove</button>
         </div>`;
       })
       .join("") || `<p class="faint">No fixtures yet.</p>`,
@@ -772,6 +779,13 @@ function wireConsole() {
     if (t.dataset.matchClear) {
       if (!confirm("Clear this match back to unplayed, log and all?")) return;
       return run(() => tournaments.clearMatch(data.id, t.dataset.matchClear), "Match cleared.");
+    }
+    if (t.dataset.matchDel) {
+      const match = D.matchById(data, t.dataset.matchDel);
+      const { homeLabel, awayLabel } = D.matchSides(data, match);
+      const what = match?.isFinal ? "the final" : `match ${match?.no}`;
+      if (!confirm(`Remove ${what} — ${homeLabel} v ${awayLabel} — from the fixture list? Its score and log go with it.`)) return;
+      return run(() => tournaments.removeMatch(data.id, t.dataset.matchDel), "Match removed.");
     }
 
     // --- auction
