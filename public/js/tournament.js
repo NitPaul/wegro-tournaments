@@ -266,12 +266,15 @@ function matchRow(m, { plain = false } = {}) {
 
   const log = played ? matchLog(m) : "";
   return `<div class="fx${plain ? " fx--plain" : ""}">
-    <div class="row spread">
+    <div class="fx__head">
+      <span>Match ${m.no}${m.time ? ` · ${e(m.time)}` : ""}</span>
+      ${pill}
+    </div>
+    <div class="fx__body">
       <span class="fx__team">${e(homeLabel)}</span>
       <span class="fx__scorebox"><b class="fx__score">${e(score)}</b>${pens}</span>
-      <span class="fx__team">${e(awayLabel)}</span>
+      <span class="fx__team fx__team--away">${e(awayLabel)}</span>
     </div>
-    <div class="row spread"><span class="faint">Match ${m.no}${m.time ? ` · ${e(m.time)}` : ""}</span>${pill}</div>
     ${log}
   </div>`;
 }
