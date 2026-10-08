@@ -110,11 +110,15 @@
 .pc--strong .pc__rating b {
   color: var(--mint);
 }
-.pc__titles {
+.pc__badges {
   position: absolute;
   z-index: 1;
   right: var(--space-3);
   top: var(--space-3);
+  display: flex;
+  gap: 4px;
+}
+.pc__titles {
   padding: 4px 8px;
   border-radius: var(--radius-pill);
   background: rgba(2, 20, 17, 0.78);
@@ -319,10 +323,6 @@
 
 /* Plays FC 26 as well — the companion marker to the titles badge. */
 .pc__game {
-  position: absolute;
-  z-index: 1;
-  left: var(--space-3);
-  top: var(--space-3);
   padding: 3px 7px;
   border-radius: var(--radius-pill);
   background: rgba(2, 20, 17, 0.78);

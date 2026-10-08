@@ -48,8 +48,10 @@ export function playerCard(person, { index = 0 } = {}) {
         <b>${rated ? h.value : "–"}</b>
         <small>${h.source === "stats" ? "stats" : person.pos ? e(person.pos) : "&nbsp;"}</small>
       </span>
-      ${person.titles ? `<span class="pc__titles" title="${D.plural(person.titles, "title")}">🏆${person.titles > 1 ? ` ×${person.titles}` : ""}</span>` : ""}
-      ${playsGame(person) ? `<span class="pc__game" title="Plays ${e(person.game?.tournaments?.[0]?.game || "FC 26")}">🎮</span>` : ""}
+      <span class="pc__badges">
+        ${playsGame(person) ? `<span class="pc__game" title="Plays ${e(person.game?.tournaments?.[0]?.game || "FC 26")}">🎮</span>` : ""}
+        ${person.titles ? `<span class="pc__titles" title="${D.plural(person.titles, "title")}">🏆${person.titles > 1 ? ` ×${person.titles}` : ""}</span>` : ""}
+      </span>
     </span>
     <span class="pc__body">
       <span class="pc__name">${e(person.name)}</span>
