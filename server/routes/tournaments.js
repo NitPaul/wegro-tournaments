@@ -45,6 +45,7 @@ import {
   getPlayer,
   resetAuction,
   setPlayerTeam,
+  teamlessPlayerForPerson,
   updatePlayer,
   updateTeam,
 } from "../db/repo/squads.js";
@@ -365,14 +366,19 @@ tournamentRoutes.post(
     for (const personId of memberIds.slice(0, 8)) {
       const person = getPerson(personId);
       if (!person) throw notFoundError("One of those players is not on the roster.");
-      createPlayer(req.tournament.id, {
-        name: person.name,
-        pos: person.pos ?? "MID",
-        teamId: id,
-        price: 0,
-        kind: "auction",
-        personId: person.id,
-      });
+      const stranded = teamlessPlayerForPerson(req.tournament.id, person.id);
+      if (stranded) {
+        updatePlayer(stranded, { teamId: id, price: 0 });
+      } else {
+        createPlayer(req.tournament.id, {
+          name: person.name,
+          pos: person.pos ?? "MID",
+          teamId: id,
+          price: 0,
+          kind: "auction",
+          personId: person.id,
+        });
+      }
       memberNames.push(person.name);
     }
 
@@ -425,7 +431,7 @@ tournamentRoutes.delete(
       );
     }
 
-    deleteTeam(team.id);
+    deleteTeam(team.id, { releaseToPool: !D.isEsports(data) });
     audit(req, "team.delete", { name: team.name });
     touched(req, res, "teams");
   }),

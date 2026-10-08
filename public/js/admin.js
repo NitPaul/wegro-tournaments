@@ -360,12 +360,22 @@ function renderPairs() {
       .join("") || `<p class="faint">No teams yet. Add the first pair below.</p>`,
   );
 
-  const taken = new Set(D.playersList(data).map((p) => p.personId).filter(Boolean));
+  // Taken means "in a team", not "has ever been in one". Someone whose team was
+  // removed is free again, and the server moves their existing row into the new
+  // team rather than adding a second one.
+  const taken = new Set(
+    D.playersList(data)
+      .filter((p) => p.teamId)
+      .map((p) => p.personId)
+      .filter(Boolean),
+  );
   const options = (roster) => {
     const free = roster.filter((p) => !taken.has(p.id));
     // Say why the list is empty, rather than offering an empty dropdown.
     return (
-      `<option value="">${free.length ? "— nobody —" : "— everybody is already in a team —"}</option>` +
+      `<option value="">${
+        free.length ? "— nobody —" : roster.length ? "— everybody is already in a team —" : "— nobody on the roster yet —"
+      }</option>` +
       free
         .map((p) => `<option value="${e(p.id)}">${e(p.name)}${p.game?.gamerTag ? ` (${e(p.game.gamerTag)})` : ""}</option>`)
         .join("")
