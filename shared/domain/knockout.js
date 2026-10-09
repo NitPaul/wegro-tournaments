@@ -12,7 +12,7 @@
  * only ever suggests: nothing is saved until somebody chooses it.
  */
 
-import { groupLabels, isPlayed, matchesList, teamById } from "./helpers.js";
+import { groupLabels, groupMatches, isPlayed, matchesList, teamById } from "./helpers.js";
 import { groupTables, matchSides } from "./standings.js";
 
 /** 'group', 'semi' or 'final'. Matches saved before stages existed say so with `isFinal`. */
@@ -122,6 +122,61 @@ export function placeholderFor(data, match, side) {
   if (!semis.length) return side === "home" ? "Leaderboard 1" : "Leaderboard 2";
   const semi = side === "home" ? semis[0] : semis[1];
   return semi ? `Winner of semi-final ${semis.indexOf(semi) + 1}` : "To be decided";
+}
+
+/**
+ * What can be done next in the knockout stage.
+ *
+ * Returned shape:
+ *   {
+ *     groupsDone:    boolean,   — every group match is full-time
+ *     hasSemis:      boolean,   — semi-final fixtures exist
+ *     semisDone:     boolean,   — every semi-final is played AND has a winner
+ *     hasFinal:      boolean,   — a final fixture exists
+ *     finalDone:     boolean,   — the final is played AND has a winner
+ *     canGenerateSemis: boolean, — group stage done, no semis yet
+ *     canGenerateFinal: boolean, — semis done, no final yet
+ *     action:        'generate_semis' | 'generate_final' | 'complete' | null
+ *   }
+ */
+export function knockoutReadiness(data) {
+  const allGroup = groupMatches(data);
+  const groupsDone = allGroup.length > 0 && allGroup.every(isPlayed);
+
+  const ko = knockoutMatches(data);
+  const semis = ko.filter((m) => stageOf(m) === "semi");
+  const finals = ko.filter((m) => stageOf(m) === "final");
+
+  const hasSemis = semis.length > 0;
+  const semisDone = hasSemis && semis.every((m) => {
+    const { winnerId } = matchWinner(data, m);
+    return isPlayed(m) && Boolean(winnerId);
+  });
+
+  const hasFinal = finals.length > 0;
+  const finalDone = hasFinal && finals.every((m) => {
+    const { winnerId } = matchWinner(data, m);
+    return isPlayed(m) && Boolean(winnerId);
+  });
+
+  const canGenerateSemis = groupsDone && !hasSemis && !hasFinal;
+  const canGenerateFinal = (semisDone || (groupsDone && !hasSemis)) && !hasFinal;
+
+  let action = null;
+  if (finalDone) action = "complete";
+  else if (canGenerateSemis) action = "generate_semis";
+  else if (canGenerateFinal) action = "generate_final";
+
+  return {
+    groupsDone,
+    hasSemis,
+    semisDone,
+    hasFinal,
+    finalDone,
+    canGenerateSemis,
+    canGenerateFinal,
+    action,
+  };
 }
 
 /** Convenience for renderers: the team on one side of a match, or null. */

@@ -429,6 +429,29 @@ function renderMatches() {
   show($("#seedKnockout"), finalReady || (semis.length > 0 && D.groupStageComplete(data)));
   $("#seedKnockout").textContent = finalReady ? "Set the final from the semi-finals" : "Seed from the groups";
 
+  // --- Knockout readiness: show Generate Semi-finals / Generate Final buttons
+  const ready = D.knockoutReadiness(data);
+  show($("#generateSemis"), ready.canGenerateSemis && data.format !== "friendly");
+  show($("#generateFinal"), ready.canGenerateFinal && data.format !== "friendly");
+
+  // --- Champion banner
+  const champ = D.champion(data);
+  const banner = $("#championBanner");
+  if (champ && ready.finalDone) {
+    show(banner, true);
+    setHTML(banner,
+      `<div style="text-align:center;padding:20px;background:linear-gradient(135deg,#ffd700 0%,#ff8c00 100%);border-radius:12px;color:#000">
+        <div style="font-size:2.5rem;margin-bottom:8px">🏆</div>
+        <h3 style="margin:0;font-size:1.4rem;font-weight:700">Champion: ${e(champ.winner?.name ?? "—")}</h3>
+        <p style="margin:4px 0 0;font-size:1rem;opacity:0.8">🥈 Runner-up: ${e(champ.runnerUp?.name ?? "—")}</p>
+        ${champ.finalScore ? `<p style="margin:4px 0 0;font-size:0.9rem;opacity:0.7">Final: ${e(champ.finalScore)}</p>` : ""}
+      </div>`
+    );
+  } else {
+    show(banner, false);
+    setHTML(banner, "");
+  }
+
   // Come back to the shape this tournament was generated with.
   $("#knockoutChoice").value = D.getSettings(data).knockout ?? "final";
 
@@ -777,12 +800,28 @@ function wireConsole() {
     if (t.dataset.playerDel) {
       return run(() => tournaments.removePlayer(data.id, t.dataset.playerDel), "Player removed.");
     }
-    if (t.id === "generateFixtures") {
+     if (t.id === "generateFixtures") {
       const knockout = $("#knockoutChoice").value;
       const groups = D.groupLabels(data);
       const how = groups.length ? `a round robin inside ${D.plural(groups.length, "group")}` : "a round robin";
       if (!confirm(`Generate ${how}${knockout === "none" ? "" : knockout === "semis" ? ", semi-finals and a final" : " and a final"}? Existing fixtures are replaced.`)) return;
       return run(() => tournaments.generateFixtures(data.id, { knockout }), "Fixtures generated.");
+    }
+    if (t.id === "generateSemis") {
+      const seeds = D.seedKnockout(data);
+      const desc = seeds.length
+        ? seeds.map((s) => `${D.teamById(data, s.homeId)?.name ?? s.homeLabel} v ${D.teamById(data, s.awayId)?.name ?? s.awayLabel}`).join(" and ")
+        : "teams from the group standings";
+      if (!confirm(`Generate semi-finals with ${desc}? You can change the teams afterwards.`)) return;
+      return run(() => tournaments.generateKnockout(data.id, { stage: "semis" }), "Semi-finals generated. Play them, then generate the final.");
+    }
+    if (t.id === "generateFinal") {
+      const pair = D.finalists(data);
+      const desc = pair
+        ? `${D.teamById(data, pair.homeId)?.name ?? "?"} v ${D.teamById(data, pair.awayId)?.name ?? "?"}`
+        : "the top two teams";
+      if (!confirm(`Generate the final with ${desc}? You can change the teams afterwards.`)) return;
+      return run(() => tournaments.generateKnockout(data.id, { stage: "final" }), "Final generated. The winner takes the trophy!");
     }
     if (t.id === "addMatch") return run(() => tournaments.addMatch(data.id, {}), "Match added.");
     if (t.dataset.matchClear) {

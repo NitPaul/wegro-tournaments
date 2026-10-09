@@ -762,6 +762,102 @@ tournamentRoutes.post(
 );
 
 /**
+ * Add knockout rounds to a tournament that was generated without them.
+ *
+ * `stage` is "semis" (creates two semi-final matches) or "final" (creates the
+ * final match). Semi-final teams are seeded from the group table; the final's
+ * teams come from the semi-final winners. The organiser can always change the
+ * teams afterwards.
+ */
+tournamentRoutes.post(
+  "/:tid/matches/generate-knockout",
+  requireTournament("admin"),
+  route(async (req, res) => {
+    const data = loadTournament(req.tournament.id);
+    const stage = req.body?.stage; // "semis" or "final"
+
+    if (stage === "semis") {
+      // Must not already have semi-finals
+      const existing = D.knockoutMatches(data).filter((m) => D.stageOf(m) === "semi");
+      if (existing.length) throw badRequest("Semi-finals already exist.");
+
+      if (!D.groupStageComplete(data)) {
+        throw badRequest("Finish all group matches before generating semi-finals.");
+      }
+
+      let no = D.matchesList(data).reduce((max, m) => Math.max(max, m.no), 0);
+      const seeds = D.seedKnockout(data);
+
+      // Create two semi-final matches, pre-populated from group standings
+      createMatch(req.tournament.id, {
+        no: ++no,
+        homeId: seeds[0]?.homeId || null,
+        awayId: seeds[0]?.awayId || null,
+        stage: "semi",
+      });
+      createMatch(req.tournament.id, {
+        no: ++no,
+        homeId: seeds[1]?.homeId || null,
+        awayId: seeds[1]?.awayId || null,
+        stage: "semi",
+      });
+
+      patchSettings(req.tournament.id, { knockout: "semis" });
+      audit(req, "match.generate_knockout", { stage: "semis" });
+      return touched(req, res, "matches");
+    }
+
+    if (stage === "final") {
+      // Must not already have a final
+      const existingFinal = D.finalMatch(data);
+      if (existingFinal) throw badRequest("A final match already exists.");
+
+      let no = D.matchesList(data).reduce((max, m) => Math.max(max, m.no), 0);
+
+      // Try to get finalists from semi-final winners
+      const pair = D.finalists(data);
+
+      // If no semis, seed from the group table
+      let homeId = pair?.homeId || null;
+      let awayId = pair?.awayId || null;
+
+      if (!homeId && !awayId && D.groupStageComplete(data)) {
+        const seeds = D.seedKnockout(data);
+        // If there are no semis and only a final is being generated, use top 2
+        const tables = D.groupTables(data);
+        const labels = D.groupLabels(data);
+        if (labels.length >= 2) {
+          // With groups: A1 vs B1 is the final when no semis
+          homeId = tables[0]?.table[0]?.team?.id || null;
+          awayId = tables[1]?.table[0]?.team?.id || null;
+        } else {
+          // Single table: 1st vs 2nd
+          homeId = tables[0]?.table[0]?.team?.id || null;
+          awayId = tables[0]?.table[1]?.team?.id || null;
+        }
+      }
+
+      createMatch(req.tournament.id, {
+        no: ++no,
+        homeId,
+        awayId,
+        stage: "final",
+        isFinal: true,
+      });
+
+      const knockoutSetting = D.knockoutMatches(data).some((m) => D.stageOf(m) === "semi")
+        ? "semis"
+        : "final";
+      patchSettings(req.tournament.id, { knockout: knockoutSetting });
+      audit(req, "match.generate_knockout", { stage: "final" });
+      return touched(req, res, "matches");
+    }
+
+    throw badRequest("Stage must be \"semis\" or \"final\".");
+  }),
+);
+
+/**
  * Score and status. A referee may do this — it is the match-day job.
  *
  * The scoreline is typed directly rather than derived from the log, because
